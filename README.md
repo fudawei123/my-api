@@ -1,13 +1,14 @@
+## API
+
+项目使用了 Node.js + Express + MySQL + Sequelize ORM 开发。
+
+项目课程地址：https://clwy.cn/courses/fullstack-node
+
+让我们一起从零基础开始，学习接口开发。先从最基础的项目搭建、数据库的入门，再到完整的真实项目开发，一步步的和大家一起完成一个真实的项目。
+
 ## 配置环境变量
 
 将`.env.example`文件拷贝为`.env`文件，并修改配置。
-
-```txt
-PORT=3000
-SECRET=你的秘钥
-```
-
-其中`PORT`配置为服务端口，`SECRET`配置为秘钥。
 
 ## 生成秘钥
 
