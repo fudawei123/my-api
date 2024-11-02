@@ -25,12 +25,12 @@ const logger = winston.createLogger({
   ],
 });
 
-module.exports = async (  req, error, statusCode, errors ) => {
+module.exports = async ( req, error, statusCode, errors ) => {
   try {
     const log = {
       statusCode,
-      url: req.originalUrl,
-      body: JSON.stringify(req.body),
+      url: req?.originalUrl || null,
+      body: req ? JSON.stringify(req.body) : null,
       errors: JSON.stringify(errors),
       stack: error.stack,
       message: error.name

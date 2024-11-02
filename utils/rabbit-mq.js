@@ -1,5 +1,6 @@
 const amqp = require('amqplib');
 const sendMail = require('./mail');
+const logger = require("./logger");
 
 // 创建全局的 RabbitMQ 连接和通道
 let connection;
@@ -31,6 +32,8 @@ const mailProducer = async (msg) => {
         channel.sendToQueue('mail_queue', Buffer.from(JSON.stringify(msg)), { persistent: true });
     } catch (error) {
         console.error('邮件队列生产者错误：', error);
+
+        logger(null, error, null, [error.message]);
     }
 };
 
@@ -43,7 +46,6 @@ const mailConsumer = async () => {
         channel.consume('mail_queue',
             async (msg) => {
                 const message = JSON.parse(msg.content.toString());
-                console.log(message)
                 await sendMail(message.to, message.subject, message.html);
             }, {
                 noAck: true,
