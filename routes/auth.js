@@ -41,7 +41,8 @@ router.post("/sign_up", validateCaptcha, async function (req, res) {
         恭喜，您已成功注册会员！
       `,
     };
-    await mailProducer(msg);
+
+    mailProducer(msg);
 
     success(res, "创建用户成功。", { user }, 201);
   } catch (error) {

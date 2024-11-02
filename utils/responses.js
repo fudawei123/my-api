@@ -1,7 +1,6 @@
 const createError = require("http-errors");
 const multer = require("multer");
 const logger = require("./logger");
-const { Log } = require("../models"); 
 
 /**
  * 请求成功
@@ -16,20 +15,6 @@ function success(res, message, data = {}, code = 200) {
     message,
     data,
   });
-}
-
-const recordLogs = async (req, error, statusCode, errors) => {
-  const log = {
-    statusCode,
-    url: req.originalUrl,
-    body: JSON.stringify(req.body),
-    errors: JSON.stringify(errors),
-    stack: error.stack,
-    message: error.name
-  }
-  
-  logger.error(log);
-  await Log.create(log);
 }
 
 /**
@@ -72,9 +57,9 @@ function failure(req, res, error) {
     status: false,
     message: `请求失败: ${error.name}`,
     errors: Array.isArray(errors) ? errors : [errors],
-  });  
+  });
 
-  recordLogs(req, error, statusCode, errors)
+  logger(req, error, statusCode, errors)
   
 }
 
