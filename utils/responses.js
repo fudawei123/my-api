@@ -1,6 +1,6 @@
 const createError = require("http-errors");
 const multer = require("multer");
-const logger = require("./logger");
+const { logMQ } = require("./rabbit-mq");
 
 /**
  * 请求成功
@@ -59,7 +59,7 @@ function failure(req, res, error) {
     errors: Array.isArray(errors) ? errors : [errors],
   });
 
-  logger(req, error, statusCode, errors)
+  logMQ.producer(req, error, statusCode, errors)
   
 }
 
