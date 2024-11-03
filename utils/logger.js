@@ -1,7 +1,7 @@
 const path = require("path");
 const winston = require("winston");
 const DailyRotateFile = require("winston-daily-rotate-file");
-const {Log} = require("../models");
+const { logMQ } = require("./rabbit-mq");
 
 // 日志目录路径
 const logDirectory = path.join(__dirname, "../logs");
@@ -36,7 +36,7 @@ module.exports = async ( req, error, statusCode, errors ) => {
       message: error.name
     }
     logger.error(log);
-    await Log.create(log);
+    logMQ.producer(req, error, statusCode, errors)
   } catch (error) {
     console.error(error)
   }
