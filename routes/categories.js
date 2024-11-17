@@ -21,7 +21,7 @@ router.get("/", async function (req, res, next) {
       await setKey("categories", categories);
     }
 
-    success(res, "查询分类成功。", { categories });
+    success(res, "查询分类成功。", categories);
   } catch (error) {
     failure(req, res, error);
   }

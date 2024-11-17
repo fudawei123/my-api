@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Course, Category, Chapter, User } = require("../models");
+const { Course, Category, Chapter, User, Attachment } = require("../models");
 const { Op } = require("sequelize");
 const { success, failure } = require("../utils/responses");
 const { NotFound, BadRequest } = require("http-errors");
@@ -30,6 +30,12 @@ router.get("/", async function (req, res) {
 
     const condition = {
       attributes: { exclude: ["CategoryId", "UserId", "content"] },
+      include: [
+        {
+          model: Attachment,
+          as: "attachment"
+        },
+      ],
       where: { categoryId: categoryId },
       order: [["id", "DESC"]],
       limit: pageSize,
@@ -38,12 +44,10 @@ router.get("/", async function (req, res) {
 
     const { count, rows } = await Course.findAndCountAll(condition);
     data = {
-      courses: rows,
-      pagination: {
-        total: count,
-        currentPage,
-        pageSize,
-      },
+      list: rows,
+      total: count,
+      currentPage,
+      pageSize,
     };
     await setKey(cacheKey, data);
 

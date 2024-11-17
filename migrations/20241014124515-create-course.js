@@ -21,8 +21,8 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING,
       },
-      image: {
-        type: Sequelize.STRING,
+      attachmentId: {
+        type: Sequelize.INTEGER.UNSIGNED,
       },
       recommended: {
         allowNull: false,

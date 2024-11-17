@@ -31,12 +31,10 @@ router.get("/", async function (req, res) {
 
     const { count, rows } = await Attachment.findAndCountAll(condition);
     success(res, "查询附件列表成功。", {
-      attachments: rows,
-      pagination: {
-        total: count,
-        currentPage,
-        pageSize,
-      },
+      list: rows,
+      total: count,
+      currentPage,
+      pageSize,
     });
   } catch (error) {
     failure(req, res, error);

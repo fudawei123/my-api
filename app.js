@@ -20,6 +20,7 @@ const likesRouter = require("./routes/likes");
 const postsRouter = require("./routes/posts");
 const uploadsRouter = require("./routes/uploads");
 const captchaRouter = require("./routes/captcha");
+const commentsRouter = require("./routes/comments");
 
 // 后台路由文件
 const adminArticlesRouter = require("./routes/admin/articles");
@@ -41,14 +42,14 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 // CORS 跨域配置
-// app.use(cors());
+app.use(cors());
 // const corsOptions = {
 //   origin: "https://clwy.cn",
 // };
-const corsOptions = {
-  origin: ["https://clwy.cn", "http://127.0.0.1:5500"],
-};
-app.use(cors(corsOptions));
+// const corsOptions = {
+//   origin: ["https://clwy.cn", "http://127.0.0.1:5500"],
+// };
+// app.use(cors(corsOptions));
 
 app.use("/", indexRouter);
 app.use("/categories", categoriesRouter);
@@ -63,6 +64,7 @@ app.use("/likes", userAuth, likesRouter);
 app.use("/posts", postsRouter);
 app.use("/uploads", userAuth, uploadsRouter);
 app.use("/captcha", captchaRouter);
+app.use("/comments", userAuth, commentsRouter)
 
 // 后台路由配置
 app.use("/admin/articles", adminAuth, adminArticlesRouter);
@@ -73,6 +75,6 @@ app.use("/admin/courses", adminAuth, adminCoursesRouter);
 app.use("/admin/chapters", adminAuth, adminChaptersRouter);
 app.use("/admin/charts", adminAuth, adminChartsRouter);
 app.use("/admin/auth", adminAuthRouter);
-app.use("/admin/attachments", adminAuth, adminAttachmentsRouter);
+app.use("/admin/attachments", adminAttachmentsRouter);
 
 module.exports = app;

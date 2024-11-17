@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       models.Course.belongsTo(models.Category, { as: "category" });
       models.Course.belongsTo(models.User, { as: "user" });
+      models.Course.belongsTo(models.Attachment, { as: "attachment"});
       models.Course.hasMany(models.Chapter, { as: "chapters" });
       models.Course.belongsToMany(models.User, { through: models.Like, foreignKey: 'courseId', as: 'likeUsers' });
     }
@@ -56,12 +57,17 @@ module.exports = (sequelize, DataTypes) => {
           len: { args: [2, 45], msg: "名称长度必须是2 ~ 45之间。" },
         },
       },
-      image: {
-        type: DataTypes.STRING,
-        validate: {
-          isUrl: { msg: "图片地址不正确。" },
+        attachmentId: {
+            type: DataTypes.INTEGER,
+            validate: {
+                async isPresent(value) {
+                    const attachment = await sequelize.models.Attachment.findByPk(value);
+                    if (!attachment) {
+                        throw new Error(`ID为：${value} 的附件不存在。`);
+                    }
+                },
+            },
         },
-      },
       recommended: {
         type: DataTypes.BOOLEAN,
         validate: {

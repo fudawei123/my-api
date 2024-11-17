@@ -14,7 +14,7 @@ router.post("/", async function (req, res) {
 
   try {
     const userId = req.userId;
-    const { courseId } = req.body;
+    const { courseId, isLike } = req.body;
 
     const course = await Course.findByPk(courseId);
     if (!course) {
@@ -30,7 +30,7 @@ router.post("/", async function (req, res) {
     });
 
     // 如果没有点赞过，那就新增。并且课程的 likesCount + 1
-    if (!like) {
+    if (isLike) {
       await Like.create({ courseId, userId }, { transaction: t });
       await course.increment("likesCount", { transaction: t });
 

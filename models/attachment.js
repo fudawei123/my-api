@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
       size: DataTypes.STRING,
       path: DataTypes.STRING,
       fullpath: DataTypes.STRING,
-      url: DataTypes.STRING,
+      url: DataTypes.STRING, metadata: DataTypes.JSON,
     },
     {
       sequelize,

@@ -14,7 +14,12 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   transports: [
-    new winston.transports.Console(),
+    new winston.transports.Console({
+      format: winston.format.combine(
+          winston.format.colorize(),                    // 终端中输出彩色的日志信息
+          winston.format.simple()
+      )
+    }),
     new DailyRotateFile({
       filename: path.join(logDirectory, "application-%DATE%.log"),
       datePattern: "YYYY-MM-DD",
@@ -35,7 +40,7 @@ module.exports = async ( req, error, statusCode, errors ) => {
       stack: error.stack,
       message: error.name
     }
-    logger.error(log);
+    logger.error('错误日志', log);
     logMQ.producer(req, error, statusCode, errors)
   } catch (error) {
     console.error(error)
