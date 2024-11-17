@@ -3,9 +3,10 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
+require("dotenv").config();
+
 const adminAuth = require("./middlewares/admin-auth");
 const userAuth = require("./middlewares/user-auth");
-require("dotenv").config();
 
 const indexRouter = require("./routes/index");
 const categoriesRouter = require("./routes/categories");
