@@ -23,7 +23,7 @@ router.get("/", async function (req, res) {
             LEFT JOIN Comments c2 ON c1.replyId = c2.id
             LEFT JOIN Users u1 ON c1.userId = u1.id
             LEFT JOIN Users u2 ON c2.userId = u2.id
-            ORDER BY c1.createdAt ASC   
+            ORDER BY c1.createdAt ASC
         `)
 
         const parent = []
@@ -47,7 +47,16 @@ router.get("/", async function (req, res) {
             }
         }
 
-        success(res, "查询评论列表成功。", parent);
+        const count = parent.length
+        const rows = parent.slice(offset, pageSize)
+        const data = {
+          list: rows,
+          total: count,
+          currentPage,
+          pageSize,
+        };
+
+        success(res, "查询评论列表成功。", data);
     } catch (error) {
         failure(req, res, error);
     }
