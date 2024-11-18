@@ -3,7 +3,7 @@ const router = express.Router();
 const {Comment, sequelize} = require("../models");
 const {success, failure} = require("../utils/responses");
 const {NotFound} = require("http-errors");
-const {setKey, getKey, delKey} = require("../utils/redis");
+const {setKey, getKey, delKey, getKeysByPattern} = require("../utils/redis");
 
 /**
  * 查询评论列表
@@ -17,7 +17,7 @@ router.get("/", async function (req, res) {
         const pageSize = Math.abs(Number(query.pageSize)) || 10;
         const offset = (currentPage - 1) * pageSize;
 
-        const cacheKey = `comments:${courseId}`;
+        const cacheKey = `comments:${courseId}:${currentPage}:${pageSize}`;
         let data = await getKey(cacheKey);
         if (data) {
             return success(res, "查询评论列表成功。", data);
@@ -78,7 +78,10 @@ router.post("/", async function (req, res) {
 
         const comment = await Comment.create(body);
 
-        await delKey(`comments:${body.courseId}`)
+        let keys = await getKeysByPattern(`comments:${body.courseId}:*`);
+        if (keys.length !== 0) {
+            await delKey(keys);
+        }
 
         success(res, "创建评论成功。", comment, 201);
     } catch (error) {
