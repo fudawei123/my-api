@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { Comment, sequelize } = require("../models");
-const { success, failure } = require("../utils/responses");
-const { NotFound } = require("http-errors");
-const { setKey, getKey } = require("../utils/redis");
+const {Comment, sequelize} = require("../models");
+const {success, failure} = require("../utils/responses");
+const {NotFound} = require("http-errors");
+const {setKey, getKey, delKey} = require("../utils/redis");
 
 /**
  * 查询评论列表
@@ -17,6 +17,11 @@ router.get("/", async function (req, res) {
         const pageSize = Math.abs(Number(query.pageSize)) || 10;
         const offset = (currentPage - 1) * pageSize;
 
+        const cacheKey = `comments:${courseId}`;
+        let data = await getKey(cacheKey);
+        if (data) {
+            return success(res, "查询评论列表成功。", data);
+        }
         const [results] = await sequelize.query(`
             SELECT c1.id, c1.text, c1.parentId, c1.replyId, u1.id as userId, u1.username as username, u1.avatar as avatar, u2.avatar as replyAvatar, u2.id as replyUserId, u2.username as replyUsername
             FROM (SELECT * FROM Comments WHERE courseId = ${courseId}) as c1
@@ -28,33 +33,34 @@ router.get("/", async function (req, res) {
 
         const parent = []
         const children = {}
-        for (let i = 0; i < results.length; i++){
+        for (let i = 0; i < results.length; i++) {
             const item = results[i]
-            if(item.parentId){
+            if (item.parentId) {
                 const parentId = item.parentId
-                if(!children[parentId]){
+                if (!children[parentId]) {
                     children[parentId] = []
                 }
                 children[parentId].push(item)
-            }else {
+            } else {
                 parent.push(item)
             }
         }
-        for (let i = 0; i < parent.length; i++){
+        for (let i = 0; i < parent.length; i++) {
             const item = parent[i]
-            if(children[item.id]){
+            if (children[item.id]) {
                 item.children = children[item.id]
             }
         }
 
         const count = parent.length
-        const rows = parent.slice(offset, pageSize)
-        const data = {
-          list: rows,
-          total: count,
-          currentPage,
-          pageSize,
+        const rows = parent.slice(offset, offset + pageSize)
+        data = {
+            list: rows,
+            total: count,
+            currentPage,
+            pageSize,
         };
+        await setKey(cacheKey, data);
 
         success(res, "查询评论列表成功。", data);
     } catch (error) {
@@ -71,6 +77,8 @@ router.post("/", async function (req, res) {
         const body = filterBody(req);
 
         const comment = await Comment.create(body);
+
+        await delKey(`comments:${body.courseId}`)
 
         success(res, "创建评论成功。", comment, 201);
     } catch (error) {
