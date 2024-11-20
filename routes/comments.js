@@ -42,7 +42,7 @@ router.get("/", async function (req, res) {
                 }
                 children[parentId].push(item)
             } else {
-                parent.push(item)
+                parent.unshift(item)
             }
         }
         for (let i = 0; i < parent.length; i++) {
@@ -77,13 +77,33 @@ router.post("/", async function (req, res) {
         const body = filterBody(req);
 
         const comment = await Comment.create(body);
+        const json = comment.toJSON()
+        const [results] = await sequelize.query(`
+            SELECT
+                u.id,
+	            u.username,
+	            u.avatar
+            FROM users u 
+            WHERE u.id in ( (SELECT c.userId FROM comments c WHERE c.id = ${req.body.replyId}), ${req.userId} )
+        `)
+        for (let i = 0; i < results.length; i++) {
+            const item = results[i]
+            if (item.id === req.userId) {
+                json.userId = item.id
+                json.username = item.username
+                json.avatar = item.avatar
+            }
+            json.replyUserId = item.id
+            json.replyUsername = item.username
+            json.replyAvatar = item.avatar
+        }
 
         let keys = await getKeysByPattern(`comments:${body.courseId}:*`);
         if (keys.length !== 0) {
             await delKey(keys);
         }
 
-        success(res, "创建评论成功。", comment, 201);
+        success(res, "创建评论成功。", json, 201);
     } catch (error) {
         failure(req, res, error);
     }
