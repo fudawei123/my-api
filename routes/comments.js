@@ -4,7 +4,7 @@ const {Comment, sequelize} = require("../models");
 const {success, failure} = require("../utils/responses");
 const {NotFound} = require("http-errors");
 const {setKey, getKey, delKey, getKeysByPattern} = require("../utils/redis");
-const {userAuth} = require("../middlewares/user-auth");
+const userAuth = require("../middlewares/user-auth");
 
 /**
  * 查询评论列表
