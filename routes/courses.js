@@ -4,7 +4,7 @@ const { Course, Category, Chapter, User, Attachment } = require("../models");
 const { Op } = require("sequelize");
 const { success, failure } = require("../utils/responses");
 const { NotFound, BadRequest } = require("http-errors");
-const { setKey, getKey } = require("../utils/redis");
+const { setKey, getKey, incr} = require("../utils/redis");
 
 /**
  * 查询课程列表
@@ -77,6 +77,9 @@ router.get("/:id", async function (req, res) {
       await setKey(`course:${id}`, course);
     }
 
+    const readCount = await incr(`courseCount:${id}`)
+    // console.log(readCount)
+
     // 查询课程关联的分类
     let category = await getKey(`category:${course.categoryId}`);
     if (!category) {
@@ -107,7 +110,7 @@ router.get("/:id", async function (req, res) {
       await setKey(`chapters:${course.id}`, chapters);
     }
 
-    success(res, "查询课程成功。", { course, category, user, chapters });
+    success(res, "查询课程成功。", { course: {...course, readCount}, category, user, chapters });
   } catch (error) {
     failure(req, res, error);
   }

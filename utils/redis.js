@@ -73,6 +73,16 @@ const flushAll = async () => {
   await client.flushAll();
 };
 
+const incr = async (key) => {
+  if (!client) await redisClient();
+  return client.incr(key);
+};
+
+const incrExpire = async (key, ttl) => {
+  if (!client) await redisClient();
+  return client.multi().incr(key).expire(key, ttl).exec();
+}
+
 module.exports = {
   redisClient,
   setKey,
@@ -80,4 +90,6 @@ module.exports = {
   delKey,
   getKeysByPattern,
   flushAll,
+  incr,
+  incrExpire
 };

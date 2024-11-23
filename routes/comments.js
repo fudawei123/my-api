@@ -4,6 +4,7 @@ const {Comment, sequelize} = require("../models");
 const {success, failure} = require("../utils/responses");
 const {NotFound} = require("http-errors");
 const {setKey, getKey, delKey, getKeysByPattern} = require("../utils/redis");
+const {userAuth} = require("../middlewares/user-auth");
 
 /**
  * 查询评论列表
@@ -19,10 +20,8 @@ router.get("/", async function (req, res) {
 
         const cacheKey = `comments:${courseId}:${currentPage}:${pageSize}`;
         let data = await getKey(cacheKey);
-        if (data) {
-            return success(res, "查询评论列表成功。", data);
-        }
-        const [results] = await sequelize.query(`
+        if (!data) {
+            const [results] = await sequelize.query(`
             SELECT c1.id, c1.text, c1.parentId, c1.replyId, u1.id as userId, u1.username as username, u1.avatar as avatar, u2.avatar as replyAvatar, u2.id as replyUserId, u2.username as replyUsername
             FROM (SELECT * FROM Comments WHERE courseId = ${courseId}) as c1
             LEFT JOIN Comments c2 ON c1.replyId = c2.id
@@ -31,36 +30,37 @@ router.get("/", async function (req, res) {
             ORDER BY c1.createdAt ASC
         `)
 
-        const parent = []
-        const children = {}
-        for (let i = 0; i < results.length; i++) {
-            const item = results[i]
-            if (item.parentId) {
-                const parentId = item.parentId
-                if (!children[parentId]) {
-                    children[parentId] = []
+            const parent = []
+            const children = {}
+            for (let i = 0; i < results.length; i++) {
+                const item = results[i]
+                if (item.parentId) {
+                    const parentId = item.parentId
+                    if (!children[parentId]) {
+                        children[parentId] = []
+                    }
+                    children[parentId].push(item)
+                } else {
+                    parent.unshift(item)
                 }
-                children[parentId].push(item)
-            } else {
-                parent.unshift(item)
             }
-        }
-        for (let i = 0; i < parent.length; i++) {
-            const item = parent[i]
-            if (children[item.id]) {
-                item.children = children[item.id]
+            for (let i = 0; i < parent.length; i++) {
+                const item = parent[i]
+                if (children[item.id]) {
+                    item.children = children[item.id]
+                }
             }
-        }
 
-        const count = parent.length
-        const rows = parent.slice(offset, offset + pageSize)
-        data = {
-            list: rows,
-            total: count,
-            currentPage,
-            pageSize,
-        };
-        await setKey(cacheKey, data);
+            const count = parent.length
+            const rows = parent.slice(offset, offset + pageSize)
+            data = {
+                list: rows,
+                total: count,
+                currentPage,
+                pageSize,
+            };
+            await setKey(cacheKey, data);
+        }
 
         success(res, "查询评论列表成功。", data);
     } catch (error) {
@@ -72,7 +72,7 @@ router.get("/", async function (req, res) {
  * 创建评论
  * POST /comments
  */
-router.post("/", async function (req, res) {
+router.post("/", userAuth, async function (req, res) {
     try {
         const body = filterBody(req);
 

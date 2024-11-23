@@ -7,6 +7,7 @@ require("dotenv").config();
 
 const adminAuth = require("./middlewares/admin-auth");
 const userAuth = require("./middlewares/user-auth");
+const rateLimiter = require('./middlewares/rateLimiter')
 
 const indexRouter = require("./routes/index");
 const categoriesRouter = require("./routes/categories");
@@ -54,7 +55,7 @@ app.use(cors());
 
 app.use("/", indexRouter);
 app.use("/categories", categoriesRouter);
-app.use("/courses", coursesRouter);
+app.use("/courses", rateLimiter, coursesRouter);
 app.use("/chapters", chaptersRouter);
 app.use("/articles", articlesRouter);
 app.use("/settings", settingsRouter);
@@ -65,7 +66,7 @@ app.use("/likes", userAuth, likesRouter);
 app.use("/posts", postsRouter);
 app.use("/uploads", userAuth, uploadsRouter);
 app.use("/captcha", captchaRouter);
-app.use("/comments", userAuth, commentsRouter)
+app.use("/comments", commentsRouter)
 
 // 后台路由配置
 app.use("/admin/articles", adminAuth, adminArticlesRouter);
