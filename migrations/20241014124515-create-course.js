@@ -24,6 +24,9 @@ module.exports = {
       attachmentId: {
         type: Sequelize.INTEGER.UNSIGNED,
       },
+      attachmentIds: {
+        type: Sequelize.STRING,
+      },
       recommended: {
         allowNull: false,
         defaultValue: false,

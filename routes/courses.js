@@ -71,6 +71,7 @@ router.get("/:id", async function (req, res) {
       course = await Course.findByPk(id, {
         attributes: { exclude: ["CategoryId", "UserId"] },
       });
+      course = course.toJSON();
       if (!course) {
         throw new NotFound(`ID: ${id}的课程未找到。`);
       }
@@ -78,7 +79,15 @@ router.get("/:id", async function (req, res) {
     }
 
     const readCount = await incr(`courseCount:${id}`)
-    // console.log(readCount)
+
+    // 查轮播图
+    const attachments = await Attachment.findAll({
+      where: {
+        id: {
+          [Op.in]: course.attachmentIds.split(","),
+        }
+      },
+    })
 
     // 查询课程关联的分类
     let category = await getKey(`category:${course.categoryId}`);
@@ -110,7 +119,7 @@ router.get("/:id", async function (req, res) {
       await setKey(`chapters:${course.id}`, chapters);
     }
 
-    success(res, "查询课程成功。", { course: {...course, readCount}, category, user, chapters });
+    success(res, "查询课程成功。", { course: {...course, readCount, attachments}, category, user, chapters });
   } catch (error) {
     failure(req, res, error);
   }

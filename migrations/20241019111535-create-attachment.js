@@ -18,7 +18,6 @@ module.exports = {
         type: Sequelize.STRING,
       },
       filename: {
-        allowNull: false,
         type: Sequelize.STRING,
       },
       mimetype: {
@@ -30,16 +29,17 @@ module.exports = {
         type: Sequelize.STRING,
       },
       path: {
-        allowNull: false,
         type: Sequelize.STRING,
       },
       fullpath: {
-        allowNull: false,
         type: Sequelize.STRING,
       },
       url: {
         allowNull: false,
         type: Sequelize.STRING,
+      },
+      metadata: {
+        type: Sequelize.JSON,
       },
       createdAt: {
         allowNull: false,
