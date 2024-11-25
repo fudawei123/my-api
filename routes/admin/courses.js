@@ -3,7 +3,7 @@ const router = express.Router();
 const {Op} = require("sequelize");
 const {success, failure} = require("../../utils/responses");
 const {NotFound, Conflict} = require("http-errors");
-const {Course, Category, User, Chapter, sequelize} = require("../../models");
+const {Course, Category, User, Chapter, Attachment, sequelize} = require("../../models");
 const {getKeysByPattern, delKey} = require('../../utils/redis');
 const recordAttachment = require("../../utils/recordAttachment");
 
@@ -81,11 +81,7 @@ router.get("/:id", async function (req, res) {
  */
 router.post("/", async function (req, res) {
     try {
-        const all = [req.body.banner, ...req.body.files].map((file) => {
-            return recordAttachment({...file, userId: req.user.id})
-        })
-        const [attachment, ...attachments] = await Promise.all(all)
-
+        const [attachment, ...attachments] = await recordAttachment([req.body.banner, ...req.body.files])
         const body = filterBody(req);
         body.userId = req.user.id;
         body.attachmentId = attachment.id;
@@ -113,6 +109,14 @@ router.delete("/:id", async function (req, res) {
             throw new Conflict("当前课程有章节，无法删除。");
         }
 
+        await Attachment.destroy({
+            where: {
+                id: {
+                    [Op.in]: [course.attachmentId, ...course.attachmentIds.split(',')]
+                }
+            }
+        })
+
         await course.destroy();
 
         await clearCache(course);
@@ -132,6 +136,16 @@ router.put("/:id", async function (req, res) {
         const course = await getCourse(req);
         const body = filterBody(req);
 
+        await Attachment.destroy({
+            where: {
+                id: {
+                    [Op.in]: [course.attachmentId, ...course.attachmentIds.split(',')]
+                }
+            }
+        })
+        const [attachment, ...attachments] = await recordAttachment([req.body.banner, ...req.body.files])
+        body.attachmentId = attachment.id;
+        body.attachmentIds = attachments.map(item => item.id).join(',')
         await course.update(body);
 
         await clearCache(course);

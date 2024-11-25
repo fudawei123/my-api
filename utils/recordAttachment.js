@@ -1,12 +1,8 @@
-const getImageMetaData = require("./getImageMetadata");
 const {Attachment} = require("../models");
-const recordAttachment = async (file) => {
-    const metadata = await getImageMetaData(file.url);
-    const attachment = await Attachment.create({
-        ...file,
-        metadata: metadata
-    });
-    return attachment
+const recordAttachment = async (files) => {
+    files = Array.isArray(files) ? files : [files];
+    const attachments = await Attachment.bulkCreate(files)
+    return attachments
 }
 
 module.exports = recordAttachment

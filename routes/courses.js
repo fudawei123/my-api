@@ -119,7 +119,7 @@ router.get("/:id", async function (req, res) {
       await setKey(`chapters:${course.id}`, chapters);
     }
 
-    success(res, "查询课程成功。", { course: {...course, readCount, attachments}, category, user, chapters });
+    success(res, "查询课程成功。", { course: {...course, readCount, files: attachments}, category, user, chapters });
   } catch (error) {
     failure(req, res, error);
   }

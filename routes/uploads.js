@@ -10,6 +10,7 @@ const path = require('path');
 const multiparty = require('multiparty');
 const fse = require('fs-extra');
 const recordAttachment = require("../utils/recordAttachment");
+const getImageMetaData = require("../utils/getImageMetadata");
 
 /**
  * 阿里云 OSS 客户端上传
@@ -26,14 +27,14 @@ router.post("/aliyun", function (req, res) {
                 return failure(req, res, new BadRequest("请选择要上传的文件。"));
             }
 
-            // 记录附件信息
-            const attachment = await recordAttachment({
-                ...req.file,
+            const { id, ...file } = req.file
+            const metadata = await getImageMetaData(file.url);
+            success(res, "上传成功。", {
+                ...file,
                 userId: req.userId,
-                fullpath: req.file.path + "/" + req.file.filename,
+                fullpath: file.path + "/" + file.filename,
+                metadata
             });
-
-            success(res, "上传成功。", attachment);
         });
     } catch (error) {
         failure(req, res, error);
