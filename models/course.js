@@ -93,6 +93,12 @@ module.exports = (sequelize, DataTypes) => {
             content: DataTypes.TEXT,
             likesCount: DataTypes.INTEGER,
             chaptersCount: DataTypes.INTEGER,
+            free: {
+                type: DataTypes.BOOLEAN,
+                validate: {
+                    isIn: {args: [[true, false]], msg: '是否免费课程的值必须是，推荐：true 不推荐：false。'}
+                }
+            },
             createdAt: {
                 type: DataTypes.DATE,
                 get() {

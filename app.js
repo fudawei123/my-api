@@ -23,6 +23,7 @@ const postsRouter = require("./routes/posts");
 const uploadsRouter = require("./routes/uploads");
 const captchaRouter = require("./routes/captcha");
 const commentsRouter = require("./routes/comments");
+const membershipsRouter = require('./routes/memberships');
 
 // 后台路由文件
 const adminArticlesRouter = require("./routes/admin/articles");
@@ -34,6 +35,7 @@ const adminChaptersRouter = require("./routes/admin/chapters");
 const adminChartsRouter = require("./routes/admin/charts");
 const adminAuthRouter = require("./routes/admin/auth");
 const adminAttachmentsRouter = require("./routes/admin/attachments");
+const adminMembershipsRouter = require('./routes/admin/memberships');
 
 var app = express();
 
@@ -67,6 +69,7 @@ app.use("/posts", postsRouter);
 app.use("/uploads", userAuth, uploadsRouter);
 app.use("/captcha", captchaRouter);
 app.use("/comments", commentsRouter)
+app.use('/memberships', membershipsRouter);
 
 // 后台路由配置
 app.use("/admin/articles", adminAuth, adminArticlesRouter);
@@ -78,5 +81,6 @@ app.use("/admin/chapters", adminAuth, adminChaptersRouter);
 app.use("/admin/charts", adminAuth, adminChartsRouter);
 app.use("/admin/auth", adminAuthRouter);
 app.use("/admin/attachments", adminAttachmentsRouter);
+app.use('/admin/memberships', adminAuth, adminMembershipsRouter);
 
 module.exports = app;
