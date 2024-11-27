@@ -13,12 +13,18 @@ router.get("/:id", async function (req, res) {
   try {
     const { id } = req.params;
 
-    const { user: currentUser } = req;
     let chapter = await Chapter.findByPk(id, {
       attributes: { exclude: ["CourseId"] },
     });
+    if (!chapter) {
+      throw new NotFound(`ID: ${id}的章节未找到。`);
+    }
+    const { user: currentUser } = req;
     const allowedRoles = [1, 100];
-    if (!chapter.free && (!currentUser || !allowedRoles.includes(currentUser.role))) {
+    if (
+      !chapter.free &&
+      (!currentUser || !allowedRoles.includes(currentUser.role))
+    ) {
       chapter = chapter.toJSON();
       chapter.content = chapter.content.slice(
         0,
