@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const { User } = require("../models");
 const { Unauthorized } = require("http-errors");
 const { failure } = require("../utils/responses");
+const { getKey, setKey } = require("../utils/redis");
 
 module.exports = (isPass = false) => {
   return async (req, res, next) => {
@@ -22,9 +23,14 @@ module.exports = (isPass = false) => {
       const { userId } = decoded;
 
       // 查询一下，当前用户
-      const user = await User.findByPk(userId);
+      const key = `currentUser:${userId}`;
+      let user = getKey(key);
       if (!user) {
-        throw new Unauthorized("用户不存在。");
+        const user = await User.findByPk(userId);
+        if (!user) {
+          throw new Unauthorized("用户不存在。");
+        }
+        setKey(key, user, 60 * 30);
       }
 
       // 如果通过验证，将 userId 挂载到 req 上，方便后续中间件或路由使用
