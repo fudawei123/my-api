@@ -24,13 +24,13 @@ module.exports = (isPass = false) => {
 
       // 查询一下，当前用户
       const key = `currentUser:${userId}`;
-      let user = getKey(key);
+      let user = await getKey(key);
       if (!user) {
         const user = await User.findByPk(userId);
         if (!user) {
           throw new Unauthorized("用户不存在。");
         }
-        setKey(key, user, 60 * 30);
+        await setKey(key, user, 60 * 30);
       }
 
       // 如果通过验证，将 userId 挂载到 req 上，方便后续中间件或路由使用

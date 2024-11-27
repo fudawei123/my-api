@@ -28,7 +28,7 @@ router.get("/:id", async function (req, res) {
       chapter = chapter.toJSON();
       chapter.content = chapter.content.slice(
         0,
-        Math.floor(chapter.content / 2)
+        Math.floor(chapter.content.length / 2)
       );
     }
 
