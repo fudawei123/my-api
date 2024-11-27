@@ -3,7 +3,7 @@ const router = express.Router();
 const { Course, Category, Chapter, User } = require("../models");
 const { success, failure } = require("../utils/responses");
 const { NotFound } = require("http-errors");
-const { setKey, getKey } = require('../utils/redis');
+const { setKey, getKey } = require("../utils/redis");
 
 /**
  * 查询章节详情
@@ -13,17 +13,30 @@ router.get("/:id", async function (req, res) {
   try {
     const { id } = req.params;
 
-    // 查询章节
-    let chapter = await getKey(`chapter:${id}`);
-    if (!chapter) {
-      chapter = await Chapter.findByPk(id, {
-        attributes: { exclude: ["CourseId"] },
-      });
-      if (!chapter) {
-        throw new NotFound(`ID: ${id}的章节未找到。`);
-      }
-      await setKey(`chapter:${id}`, chapter);
+    const { user: currentUser } = req;
+    let chapter = await Chapter.findByPk(id, {
+      attributes: { exclude: ["CourseId"] },
+    });
+    const allowedRoles = [1, 100];
+    if (!chapter.free && (!currentUser || !allowedRoles.includes(currentUser.role))) {
+      chapter = chapter.toJSON();
+      chapter.content = chapter.content.slice(
+        0,
+        Math.floor(chapter.content / 2)
+      );
     }
+
+    // 查询章节
+    // let chapter = await getKey(`chapter:${id}`);
+    // if (!chapter) {
+    //   chapter = await Chapter.findByPk(id, {
+    //     attributes: { exclude: ["CourseId"] },
+    //   });
+    //   if (!chapter) {
+    //     throw new NotFound(`ID: ${id}的章节未找到。`);
+    //   }
+    //   await setKey(`chapter:${id}`, chapter);
+    // }
 
     // 查询章节关联的课程
     let course = await getKey(`course:${chapter.courseId}`);
