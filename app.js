@@ -9,7 +9,7 @@ const adminAuth = require("./middlewares/admin-auth");
 const userAuth = require("./middlewares/user-auth");
 const rateLimiter = require('./middlewares/rateLimiter')
 
-const indexRouter = require("./routes/index");
+const homeRouter = require("./routes/home");
 const categoriesRouter = require("./routes/categories");
 const coursesRouter = require("./routes/courses");
 const chaptersRouter = require("./routes/chapters");
@@ -57,7 +57,7 @@ app.use(cors());
 // };
 // app.use(cors(corsOptions));
 
-app.use("/", indexRouter);
+app.use("/", homeRouter);
 app.use("/categories", categoriesRouter);
 app.use("/courses", rateLimiter, coursesRouter);
 app.use("/chapters", userAuth(true), chaptersRouter);
