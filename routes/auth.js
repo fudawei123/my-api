@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { User } = require("../models");
+const { User, LoginRecord } = require("../models");
 const { success, failure } = require("../utils/responses");
 const { NotFound, BadRequest, Unauthorized } = require("http-errors");
 const bcrypt = require("bcryptjs");
@@ -9,7 +9,7 @@ const { Op } = require("sequelize");
 const validateCaptcha = require("../middlewares/validate-captcha");
 const { delKey } = require("../utils/redis");
 const sendMail = require("../utils/mail");
-const { emailMQ } = require('../utils/rabbit-mq');
+const { emailMQ } = require("../utils/rabbit-mq");
 
 /**
  * 用户注册
@@ -35,7 +35,7 @@ router.post("/sign_up", validateCaptcha, async function (req, res) {
     // 将邮件发送请求放入队列
     const msg = {
       to: user.email,
-      subject: '注册成功通知',
+      subject: "注册成功通知",
       html: `
         您好，<span style="color: red">${user.nickname}</span>。<br><br>
         恭喜，您已成功注册会员！
@@ -92,6 +92,19 @@ router.post("/sign_in", async (req, res) => {
       process.env.SECRET,
       { expiresIn: "30d" }
     );
+
+    const loginRecord = await LoginRecord.findOne({
+      where: { userId: user.id },
+    });
+    if (loginRecord) {
+      await loginRecord.update({ token: token });
+    } else {
+      await LoginRecord.create({
+        userId: user.id,
+        token: token,
+      });
+    }
+
     success(res, "登录成功。", { token });
   } catch (error) {
     failure(req, res, error);

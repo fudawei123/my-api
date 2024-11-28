@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { User } = require("../models");
+const { User, LoginRecord } = require("../models");
 const { Unauthorized } = require("http-errors");
 const { failure } = require("../utils/responses");
 const { getKey, setKey } = require("../utils/redis");
@@ -21,6 +21,13 @@ module.exports = (isPass = false) => {
 
       // 从 jwt 中，解析出之前存入的 userId
       const { userId } = decoded;
+
+      const loginRecord = await LoginRecord.findOne({ where: { userId: userId } });
+      if(loginRecord){
+        if(token !== loginRecord.token ){
+          throw new Unauthorized("此账号已在别处登录。");
+        }
+      }
 
       // 查询一下，当前用户
       const key = `currentUser:${userId}`;
