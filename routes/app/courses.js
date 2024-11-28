@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { Course, Category, Chapter, User, Attachment } = require("../models");
 const { Op } = require("sequelize");
-const { success, failure } = require("../utils/responses");
 const { NotFound, BadRequest } = require("http-errors");
-const { setKey, getKey, incr} = require("../utils/redis");
+const { Course, Category, Chapter, User, Attachment } = require("../../models");
+const { success, failure } = require("../../utils/responses");
+const { setKey, getKey, incr} = require("../../utils/redis");
 
 /**
  * 查询课程列表

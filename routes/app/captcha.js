@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { success, failure } = require("../utils/responses");
 const svgCaptcha = require("svg-captcha");
-const { setKey } = require("../utils/redis");
 const { v4: uuidv4 } = require("uuid");
+const { success, failure } = require("../../utils/responses");
+const { setKey } = require("../../utils/redis");
 
 /**
  * 获取验证码

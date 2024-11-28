@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { Setting } = require("../models");
 const { NotFound } = require("http-errors");
-const { success, failure } = require("../utils/responses");
-const { setKey, getKey } = require("../utils/redis");
+const { Setting } = require("../../models");
+const { success, failure } = require("../../utils/responses");
+const { setKey, getKey } = require("../../utils/redis");
 
 /**
  * 查询系统信息

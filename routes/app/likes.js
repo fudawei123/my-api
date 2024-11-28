@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { Course, Like, User, sequelize } = require("../models");
-const { success, failure } = require("../utils/responses");
 const { NotFound } = require('http-errors');
+const { Course, Like, User, sequelize } = require("../../models");
+const { success, failure } = require("../../utils/responses");
 
 /**
  * 点赞、取消赞

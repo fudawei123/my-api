@@ -1,15 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const { User, LoginRecord } = require("../models");
-const { success, failure } = require("../utils/responses");
 const { NotFound, BadRequest, Unauthorized } = require("http-errors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
-const validateCaptcha = require("../middlewares/validate-captcha");
-const { delKey } = require("../utils/redis");
-const sendMail = require("../utils/mail");
-const { emailMQ } = require("../utils/rabbit-mq");
+const { User, LoginRecord } = require("../../models");
+const { success, failure } = require("../../utils/responses");
+const validateCaptcha = require("../../middlewares/validate-captcha");
+const { delKey } = require("../../utils/redis");
+const sendMail = require("../../utils/mail");
+const { emailMQ } = require("../../utils/rabbit-mq");
 
 /**
  * 用户注册

@@ -1,7 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const {success, failure} = require("../utils/responses");
-const {config, client, singleFileUpload} = require("../utils/aliyun");
 const {BadRequest} = require("http-errors");
 const {v4: uuidv4} = require("uuid");
 const moment = require("moment");
@@ -9,8 +7,9 @@ const multer = require("multer");
 const path = require('path');
 const multiparty = require('multiparty');
 const fse = require('fs-extra');
-const recordAttachment = require("../utils/recordAttachment");
-const getImageMetaData = require("../utils/getImageMetadata");
+const {success, failure} = require("../../utils/responses");
+const {config, client, singleFileUpload} = require("../../utils/aliyun");
+const getImageMetaData = require("../../utils/getImageMetadata");
 
 /**
  * 阿里云 OSS 客户端上传

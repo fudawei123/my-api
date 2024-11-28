@@ -1,10 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const {Comment, sequelize} = require("../models");
-const {success, failure} = require("../utils/responses");
-const {NotFound} = require("http-errors");
-const {setKey, getKey, delKey, getKeysByPattern} = require("../utils/redis");
-const userAuth = require("../middlewares/user-auth");
+const {Comment, sequelize} = require("../../models");
+const {success, failure} = require("../../utils/responses");
+const {setKey, getKey, delKey, getKeysByPattern} = require("../../utils/redis");
+const userAuth = require("../../middlewares/user-auth");
 
 /**
  * 查询评论列表

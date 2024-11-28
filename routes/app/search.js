@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { Course } = require("../models");
-const { success, failure } = require("../utils/responses");
 const { Op } = require("sequelize");
+const { Course } = require("../../models");
+const { success, failure } = require("../../utils/responses");
 
 /**
  * 搜索课程

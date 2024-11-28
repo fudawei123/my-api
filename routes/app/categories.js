@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { Category } = require("../models");
-const { success, failure } = require("../utils/responses");
-const { setKey, getKey } = require('../utils/redis');
+const { Category } = require("../../models");
+const { success, failure } = require("../../utils/responses");
+const { setKey, getKey } = require('../../utils/redis');
 
 /**
  * 查询分类列表

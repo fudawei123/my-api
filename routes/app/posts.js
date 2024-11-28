@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { Post, Category } = require("../models");
-const { success, failure } = require("../utils/responses");
+const { Post, Category } = require("../../models");
+const { success, failure } = require("../../utils/responses");
 
 /**
  * GET /posts

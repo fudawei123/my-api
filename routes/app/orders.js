@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { Order, User, Membership } = require("../models");
-const { success, failure } = require("../utils/responses");
 const { BadRequest, NotFound } = require("http-errors");
 const { v4: uuidv4 } = require("uuid");
-const { setKey, getKey } = require("../utils/redis");
+const { Order, User, Membership } = require("../../models");
+const { success, failure } = require("../../utils/responses");
+const { setKey, getKey } = require("../../utils/redis");
 
 /**
  * 查询订单列表
