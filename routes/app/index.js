@@ -21,7 +21,7 @@ const ordersRouter = require("./orders");
 
 router.use("/", homeRouter);
 router.use("/categories", categoriesRouter);
-router.use("/courses", coursesRouter);
+router.use("/courses", userAuth(true), coursesRouter);
 router.use("/chapters", userAuth(true), chaptersRouter);
 router.use("/articles", articlesRouter);
 router.use("/settings", settingsRouter);
