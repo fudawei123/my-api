@@ -71,7 +71,7 @@ router.get("/", async function (req, res) {
  * 创建评论
  * POST /comments
  */
-router.post("/", userAuth, async function (req, res) {
+router.post("/", userAuth(), async function (req, res) {
     try {
         const body = filterBody(req);
 
