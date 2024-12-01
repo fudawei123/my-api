@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Op } = require("sequelize");
-const { Course } = require("../../models");
+const { Course, Like, Attachment, User} = require("../../models");
 const { success, failure } = require("../../utils/responses");
 
 /**
@@ -18,26 +18,52 @@ router.get("/", async function (req, res) {
     const condition = {
       where: {},
       attributes: { exclude: ["CategoryId", "UserId", "content"] },
+      include: [
+        {
+          model: Attachment,
+          as: "attachment",
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: {exclude: ["password"]},
+        },
+      ],
       order: [["id", "DESC"]],
       limit: pageSize,
       offset: offset,
     };
-
     if (query.name) {
       condition.where.name = {
         [Op.like]: `%${query.name}%`,
       };
     }
-
     const { count, rows } = await Course.findAndCountAll(condition);
-    success(res, "搜索课程成功。", {
-      courses: rows,
-      pagination: {
-        total: count,
-        currentPage,
-        pageSize,
-      },
-    });
+    const list = JSON.parse(JSON.stringify(rows))
+
+    if (req.userId) {
+      const ids = list.map((item) => item.id);
+      const likes = await Like.findAll({
+        where: {
+          userId: req.userId,
+          courseId: {
+            [Op.in]: ids,
+          },
+        },
+      });
+      const courseIds = likes.map((item) => item.courseId);
+      list.forEach((item) => {
+        item.isLike = courseIds.includes(item.id);
+      });
+    }
+
+    const data = {
+      list: list,
+      total: count,
+      currentPage,
+      pageSize,
+    };
+    success(res, "搜索课程成功。", data);
   } catch (error) {
     failure(req, res, error);
   }

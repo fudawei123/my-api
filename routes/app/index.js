@@ -25,7 +25,7 @@ router.use("/courses", userAuth(true), coursesRouter);
 router.use("/chapters", userAuth(true), chaptersRouter);
 router.use("/articles", articlesRouter);
 router.use("/settings", settingsRouter);
-router.use("/search", searchRouter);
+router.use("/search", userAuth(true), searchRouter);
 router.use("/auth", authRouter);
 router.use("/users", userAuth(), usersRouter);
 router.use("/likes", userAuth(), likesRouter);
