@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { BadRequest, NotFound } = require("http-errors");
 const bcrypt = require("bcryptjs");
-const { User } = require("../../models");
+
+const { User, Like } = require("../../models");
 const { success, failure } = require("../../utils/responses");
 const { setKey, getKey, delKey } = require("../../utils/redis");
 
@@ -15,10 +16,17 @@ router.get("/me", async function (req, res) {
     let user = await getKey(`user:${req.userId}`);
     if (!user) {
       user = await getUser(req);
+      user = user.toJSON();
       await setKey(`user:${req.userId}`, user);
     }
 
-    success(res, "查询当前用户信息成功。", { user });
+    const likesCount = Like.count({
+      where: {
+        userId: req.userId,
+      },
+    });
+
+    success(res, "查询当前用户信息成功。", { user: {...user, likesCount} });
   } catch (error) {
     failure(req, res, error);
   }
@@ -42,7 +50,7 @@ router.put("/info", async function (req, res) {
     await user.update(body);
 
     await clearCache(user);
-    
+
     success(res, "更新用户信息成功。", { user });
   } catch (error) {
     failure(req, res, error);
