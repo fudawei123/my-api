@@ -151,20 +151,4 @@ router.get("/:id", async function (req, res) {
     }
 });
 
-router.get("/likes", async function (req, res) {
-    // sql
-    try {
-
-        const sql = `
-    select * from courses where id in (
-      select courseId from Likes where user_id = ?
-    )
-    `
-
-        success(res, "查询课程成功。");
-    } catch (error) {
-        failure(req, res, error);
-    }
-});
-
 module.exports = router;

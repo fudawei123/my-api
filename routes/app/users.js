@@ -3,7 +3,7 @@ const router = express.Router();
 const { BadRequest, NotFound } = require("http-errors");
 const bcrypt = require("bcryptjs");
 
-const { User, Like } = require("../../models");
+const { User, Like, Course } = require("../../models");
 const { success, failure } = require("../../utils/responses");
 const { setKey, getKey, delKey } = require("../../utils/redis");
 
@@ -26,7 +26,7 @@ router.get("/me", async function (req, res) {
       },
     });
 
-    success(res, "查询当前用户信息成功。", { user: {...user, likesCount} });
+    success(res, "查询当前用户信息成功。", { user: { ...user, likesCount } });
   } catch (error) {
     failure(req, res, error);
   }
@@ -99,6 +99,59 @@ router.put("/account", async function (req, res) {
     await clearCache(user);
 
     success(res, "更新账户信息成功。", { user });
+  } catch (error) {
+    failure(req, res, error);
+  }
+});
+
+/**
+ * 查询用户点赞过的课程
+ */
+router.get("/likes", async function (req, res) {
+  // sql
+  try {
+    const likeCourses = Like.findAll({
+      attributes: ["courseId"],
+      where: { userId: req.user.id },
+    });
+
+    const ids = likeCourses.map((item) => item.courseId);
+    const query = req.query;
+    const currentPage = Math.abs(Number(query.currentPage)) || 1;
+    const pageSize = Math.abs(Number(query.pageSize)) || 10;
+    const offset = (currentPage - 1) * pageSize;
+
+    const condition = {
+      attributes: { exclude: ["CategoryId", "UserId", "content"] },
+      include: [
+        {
+          model: Attachment,
+          as: "attachment",
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: { exclude: ["password"] },
+        },
+      ],
+      where: {
+        id: {
+          [Op.in]: ids,
+        },
+      },
+      order: [["id", "DESC"]],
+      limit: pageSize,
+      offset: offset,
+    };
+    const { count, rows } = await Course.findAndCountAll(condition);
+
+    const data = {
+      list: rows,
+      total: count,
+      currentPage,
+      pageSize,
+    };
+    success(res, "查询用户点赞过的课程成功。", data);
   } catch (error) {
     failure(req, res, error);
   }
