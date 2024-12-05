@@ -79,6 +79,7 @@ router.post("/", async function (req, res, next) {
       subject: membership.name,
       totalAmount: membership.price,
       status: 0,
+      membershipMonths: membership.durationMonths,
     });
 
     success(res, "订单创建成功。", { order });

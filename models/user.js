@@ -1,7 +1,7 @@
 "use strict";
 const { Model } = require("sequelize");
 const bcrypt = require("bcryptjs");
-const { BadRequest } = require('http-errors');
+const { BadRequest } = require("http-errors");
 
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
@@ -12,9 +12,13 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       models.User.hasMany(models.Course, { as: "courses" });
-      models.User.belongsToMany(models.Course, { through: models.Like, foreignKey: 'userId', as: 'likeCourses' });
-      models.User.hasMany(models.Attachment, { as: 'attachments' });
-      models.User.hasMany(models.Order, { as: 'orders' });
+      models.User.belongsToMany(models.Course, {
+        through: models.Like,
+        foreignKey: "userId",
+        as: "likeCourses",
+      });
+      models.User.hasMany(models.Attachment, { as: "attachments" });
+      models.User.hasMany(models.Order, { as: "orders" });
     }
   }
   User.init(
@@ -97,8 +101,8 @@ module.exports = (sequelize, DataTypes) => {
           notNull: { msg: "用户组必须选择。" },
           notEmpty: { msg: "用户组不能为空。" },
           isIn: {
-            args: [[0, 100]],
-            msg: "用户组的值必须是，普通用户：0 管理员：100。",
+            args: [[0, 1, 100]],
+            msg: "用户组的值必须是，普通用户：0 大会员：1 管理员：100。",
           },
         },
       },

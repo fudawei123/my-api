@@ -19,6 +19,7 @@ module.exports = (sequelize, DataTypes) => {
     totalAmount: DataTypes.DECIMAL,
     paymentMethod: DataTypes.TINYINT,
     status: DataTypes.TINYINT,
+    membershipMonths: DataTypes.INTEGER,
     paidAt: {
       type: DataTypes.DATE,
       get() {
