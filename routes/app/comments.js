@@ -4,6 +4,7 @@ const {Comment, sequelize} = require("../../models");
 const {success, failure} = require("../../utils/responses");
 const {setKey, getKey, delKey, getKeysByPattern} = require("../../utils/redis");
 const userAuth = require("../../middlewares/user-auth");
+const { broadcast } = require("../../utils/ws");
 
 /**
  * 查询评论列表
@@ -95,6 +96,10 @@ router.post("/", userAuth(), async function (req, res) {
             json.replyUserId = item.id
             json.replyUsername = item.username
             json.replyAvatar = item.avatar
+
+            if (json.replyId && json.replyUserId) {
+                broadcast(json.replyUserId)
+            }
         }
 
         let keys = await getKeysByPattern(`comments:${body.courseId}:*`);

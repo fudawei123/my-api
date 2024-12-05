@@ -7,7 +7,7 @@
 </head>
 <body>
   <script>
-    const socket = new WebSocket('ws://localhost:3000');
+    const socket = new WebSocket('ws://localhost:3000/?userId=123');
 
     socket.onopen = () => {
       console.log('Connected to the server');
@@ -15,7 +15,11 @@
     };
 
     socket.onmessage = (event) => {
-      console.log(`Received: ${event.data}`);
+      const reader = new FileReader();
+      reader.onload = () => {
+        console.log(`Received: ${reader.result}`);
+      };
+      reader.readAsText(event.data);
     };
 
     socket.onclose = () => {

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { NotFound } = require('http-errors');
-const { Course, Like, User, sequelize } = require("../../models");
+const { Course, Like, User, sequelize, Attachment} = require("../../models");
 const { success, failure } = require("../../utils/responses");
 
 /**
@@ -77,6 +77,17 @@ router.get("/", async function (req, res) {
     const courses = await user.getLikeCourses({
       joinTableAttributes: [],
       attributes: { exclude: ["CategoryId", "UserId", "content"] },
+      include: [
+        {
+          model: Attachment,
+          as: "attachment",
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: { exclude: ["password"] },
+        },
+      ],
       order: [["id", "DESC"]],
       limit: pageSize,
       offset: offset,
