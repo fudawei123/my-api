@@ -39,12 +39,10 @@ router.get("/", async function (req, res) {
 
     const { count, rows } = await Order.findAndCountAll(condition);
     success(res, "查询订单列表成功。", {
-      orders: rows,
-      pagination: {
-        total: count,
-        currentPage,
-        pageSize,
-      },
+      list: rows,
+      total: count,
+      currentPage,
+      pageSize,
     });
   } catch (error) {
     failure(res, error);
