@@ -19,7 +19,7 @@ module.exports = {
         durationMonths: 12,
         price: 100,
         rank: 2,
-        description: '已优惠 <span class="red"><strong>20元</strong></span>',
+        description: '已优惠 <span style="color: red"><strong>20元</strong></span>',
         createdAt: new Date(),
         updatedAt: new Date()
       }
