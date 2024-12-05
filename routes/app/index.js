@@ -18,6 +18,7 @@ const captchaRouter = require("./captcha");
 const commentsRouter = require("./comments");
 const membershipsRouter = require("./memberships");
 const ordersRouter = require("./orders");
+const alipayRouter = require('./alipay');
 
 router.use("/", homeRouter);
 router.use("/categories", categoriesRouter);
@@ -35,5 +36,6 @@ router.use("/captcha", captchaRouter);
 router.use("/comments", commentsRouter);
 router.use("/memberships", membershipsRouter);
 router.use("/orders", userAuth(), ordersRouter);
+router.use('/alipay', alipayRouter);
 
 module.exports = router;
