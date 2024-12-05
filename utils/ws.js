@@ -18,28 +18,32 @@ function broadcast(message) {
 //   broadcast(`Server time: ${currentTime}`);
 // }, 5000);
 
-module.exports = (server) => {
-  const wss = new WebSocket.Server({ server });
+let wss;
+module.exports = {
+  wss,
+  createWebSocketServer(server) {
+    wss = new WebSocket.Server({ server });
 
-  // WebSocket连接事件
-  wss.on("connection", (ws) => {
-    console.log("Client connected");
+    // WebSocket连接事件
+    wss.on("connection", (ws) => {
+      console.log("Client connected");
 
-    // 将客户端添加到集合中
-    clients.add(ws);
+      // 将客户端添加到集合中
+      clients.add(ws);
 
-    ws.on("message", (message) => {
-      console.log(`Received: ${message}`);
-      // 广播消息给所有客户端
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(message);
-        }
+      ws.on("message", (message) => {
+        console.log(`Received: ${message}`);
+        // 广播消息给所有客户端
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+          }
+        });
+      });
+
+      ws.on("close", () => {
+        console.log("Client disconnected");
       });
     });
-
-    ws.on("close", () => {
-      console.log("Client disconnected");
-    });
-  });
+  },
 };
