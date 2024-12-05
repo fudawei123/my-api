@@ -143,10 +143,27 @@ router.get("/likeCourses", async function (req, res) {
       limit: pageSize,
       offset: offset,
     };
-    const { count, rows } = await Course.findAndCountAll(condition);
+    const {count, rows} = await Course.findAndCountAll(condition);
+    const list = JSON.parse(JSON.stringify(rows))
+
+    if (req.userId) {
+      const ids = list.map((item) => item.id);
+      const likes = await Like.findAll({
+        where: {
+          userId: req.userId,
+          courseId: {
+            [Op.in]: ids,
+          },
+        },
+      });
+      const courseIds = likes.map((item) => item.courseId);
+      list.forEach((item) => {
+        item.isLike = courseIds.includes(item.id);
+      });
+    }
 
     const data = {
-      list: rows,
+      list: list,
       total: count,
       currentPage,
       pageSize,
