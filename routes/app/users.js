@@ -2,8 +2,9 @@ const express = require("express");
 const router = express.Router();
 const { BadRequest, NotFound } = require("http-errors");
 const bcrypt = require("bcryptjs");
+const {Op} = require("sequelize");
 
-const { User, Like, Course } = require("../../models");
+const { User, Like, Course, Attachment } = require("../../models");
 const { success, failure } = require("../../utils/responses");
 const { setKey, getKey, delKey } = require("../../utils/redis");
 
@@ -20,7 +21,7 @@ router.get("/me", async function (req, res) {
       await setKey(`user:${req.userId}`, user);
     }
 
-    const likesCount = Like.count({
+    const likesCount = await Like.count({
       where: {
         userId: req.userId,
       },
@@ -107,11 +108,10 @@ router.put("/account", async function (req, res) {
 /**
  * 查询用户点赞过的课程
  */
-router.get("/likes", async function (req, res) {
+router.get("/likeCourses", async function (req, res) {
   // sql
   try {
-    const likeCourses = Like.findAll({
-      attributes: ["courseId"],
+    const likeCourses = await Like.findAll({
       where: { userId: req.user.id },
     });
 
