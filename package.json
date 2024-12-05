@@ -32,7 +32,8 @@
     "svg-captcha": "^1.4.0",
     "uuid": "^10.0.0",
     "winston": "^3.15.0",
-    "winston-daily-rotate-file": "^5.0.0"
+    "winston-daily-rotate-file": "^5.0.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/sequelize": "^4.28.20"
