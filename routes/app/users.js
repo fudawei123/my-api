@@ -4,7 +4,7 @@ const { BadRequest, NotFound } = require("http-errors");
 const bcrypt = require("bcryptjs");
 const {Op} = require("sequelize");
 
-const { User, Like, Course, Attachment } = require("../../models");
+const { User, Like, Course, Attachment, sequelize } = require("../../models");
 const { success, failure } = require("../../utils/responses");
 const { setKey, getKey, delKey } = require("../../utils/redis");
 
@@ -169,6 +169,24 @@ router.get("/likeCourses", async function (req, res) {
       pageSize,
     };
     success(res, "查询用户点赞过的课程成功。", data);
+  } catch (error) {
+    failure(req, res, error);
+  }
+});
+
+/**
+ * 查询回复的评论
+ */
+router.get("/replyComments", async function (req, res) {
+  try {
+
+    const [results] = await sequelize.query(`
+      SELECT c1.*, c2.* 
+      FROM (SELECT * FROM Comments WHERE userId = ${req.userId}) c1 
+      LEFT JOIN (SELECT * FROM Comments WHERE replyId IS NOT NULL) c2 ON c1.id = c2.replyId
+    `);
+
+    success(res, "查询回复的评论成功。", results);
   } catch (error) {
     failure(req, res, error);
   }
