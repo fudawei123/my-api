@@ -181,9 +181,10 @@ router.get("/replyComments", async function (req, res) {
   try {
 
     const [results] = await sequelize.query(`
-      SELECT c1.*, c2.* 
+      SELECT c1.*, c2.*, c3.*
       FROM (SELECT * FROM Comments WHERE userId = ${req.userId}) c1 
       LEFT JOIN (SELECT * FROM Comments WHERE replyId IS NOT NULL) c2 ON c1.id = c2.replyId
+      LEFT JOIN Comments c3 ON c2.id = c3.replyId
     `);
 
     success(res, "查询回复的评论成功。", results);
