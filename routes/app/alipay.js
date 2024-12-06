@@ -44,6 +44,66 @@ router.post("/pay/:platform", userAuth, async function (req, res, next) {
 });
 
 /**
+ * 支付宝支付成功后，跳转页面
+ * POST /alipay/finish
+ */
+router.get('/finish', async function (req, res) {
+  try {
+    const alipayData = req.query;
+    const verify = alipaySdk.checkNotifySign(alipayData);
+
+    // 验签成功，更新订单与会员信息
+    if (verify) {
+      await paidSuccess(alipayData);
+      res.send('支付成功');
+    } else {
+      throw new BadRequest('支付验签失败。');
+    }
+  } catch (error) {
+    failure(res, error)
+  }
+});
+
+/**
+ * 支付成功后，更新订单状态和会员信息
+ * @param alipayData
+ * @returns {Promise<void>}
+ */
+async function paidSuccess(alipayData) {
+  const { out_trade_no, trade_no, timestamp } = alipayData;
+
+  // 查询当前订单。
+  const order = await Order.findOne({ where: { outTradeNo: out_trade_no } });
+
+  // 对于状态已更新的订单，直接返回。防止用户重复请求，重复增加大会员有效期。
+  if (order.status > 0) {
+    return;
+  }
+
+  // 更新订单状态
+  await order.update({
+    tradeNo: trade_no,    // 流水号
+    status: 1,            // 订单状态：已支付
+    paymentMethod: 0,     // 支付方式：支付宝
+    paidAt: timestamp,    // 支付时间
+  })
+
+  // 查询订单对应的用户
+  const user = await User.findByPk(order.userId);
+
+  // 将用户组设置为大会员。可防止管理员创建订单，并将用户组修改为大会员。
+  if (user.role === 0) {
+    user.role = 1;
+  }
+
+  // 使用moment.js，增加大会员有效期
+  user.membershipExpiredAt = moment(user.expiredAt).add(order.membershipMonths, 'months').toDate();
+
+  // 保存用户信息
+  await user.save();
+}
+
+/**
  * 公共方法：查询当前订单
  * @param req
  * @returns {Promise<*>}
