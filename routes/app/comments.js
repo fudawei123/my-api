@@ -103,7 +103,6 @@ router.post("/", userAuth(), async function (req, res) {
                 json.replyAvatar = item.avatar;
             }
         }
-        console.log(json)
         if (json.replyUserId && json.replyUserId !== json.userId) {
             broadcast(json.replyUserId, {
                 type: "reply",
