@@ -33,8 +33,8 @@ router.post("/pay/:platform", userAuth, async function (req, res, next) {
     // 支付页面接口，返回 HTML 代码片段
     // const html = alipaySdk.pageExecute(method, "GET", {
     //   bizContent,
-    //   returnUrl: `https://demo.clwy.cn/alipay/return`, // 当支付完成后，支付宝跳转地址
-    //   notify_url: "https://api.clwy.cn/alipay/notify", // 异步通知回调地址
+    //   returnUrl: process.env.ALIPAY_RETURN_URL, // 当支付完成后，支付宝跳转地址
+    //   notify_url: process.env.ALIPAY_NOTIFY_URL, // 异步通知回调地址
     // });
 
     // success(res, "支付地址生成成功", { html });
@@ -45,7 +45,7 @@ router.post("/pay/:platform", userAuth, async function (req, res, next) {
 
 /**
  * 支付宝支付成功后，跳转页面
- * POST /alipay/finish
+ * GET /alipay/finish
  */
 router.get('/finish', async function (req, res) {
   try {
@@ -55,9 +55,31 @@ router.get('/finish', async function (req, res) {
     // 验签成功，更新订单与会员信息
     if (verify) {
       await paidSuccess(alipayData);
-      res.send('支付成功');
+      res.redirect('https://clwy.cn/users/course_orders');
+      // res.send('支付成功');
     } else {
       throw new BadRequest('支付验签失败。');
+    }
+  } catch (error) {
+    failure(res, error)
+  }
+});
+
+/**
+ * 支付宝异步通知
+ * POST /alipay/notify
+ */
+router.post('/notify', async function (req, res) {
+  try {
+    const alipayData = req.body;
+    const verify = alipaySdk.checkNotifySign(alipayData);
+
+    // 如果验签成功，更新订单与会员信息
+    if (verify) {
+      await paidSuccess(alipayData);
+      res.send('success');
+    } else {
+      res.send('fail');
     }
   } catch (error) {
     failure(res, error)
