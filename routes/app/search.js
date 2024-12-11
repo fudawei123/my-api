@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const { Op } = require("sequelize");
-const { Course, Like, Attachment, User} = require("../../models");
+
+const { Course, Like, Attachment, User } = require("../../models");
 const { success, failure } = require("../../utils/responses");
+const { search } = require("../../utils/meilisearch");
 
 /**
  * 搜索课程
@@ -26,7 +28,7 @@ router.get("/", async function (req, res) {
         {
           model: User,
           as: "user",
-          attributes: {exclude: ["password"]},
+          attributes: { exclude: ["password"] },
         },
       ],
       order: [["id", "DESC"]],
@@ -34,12 +36,13 @@ router.get("/", async function (req, res) {
       offset: offset,
     };
     if (query.name) {
-      condition.where.name = {
-        [Op.like]: `%${query.name}%`,
+      const ids = search(query.name);
+      condition.where.id = {
+        [Op.in]: ids,
       };
     }
     const { count, rows } = await Course.findAndCountAll(condition);
-    const list = JSON.parse(JSON.stringify(rows))
+    const list = JSON.parse(JSON.stringify(rows));
 
     if (req.userId) {
       const ids = list.map((item) => item.id);
