@@ -23,6 +23,11 @@ const deleteDocuments = (documentIds) => {
 };
 
 const search = async (query) => {
+  // client.index('movies').search('winter feast', {
+  //   attributesToHighlight: ['overview'],
+  //   highlightPreTag: '<span class="highlight">',
+  //   highlightPostTag: '</span>'
+  // })
   const search = await coursesIndex.search(query);
   return search.hits.map((hit) => hit.id);
 };
