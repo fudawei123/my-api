@@ -148,19 +148,21 @@ router.put("/:id", async function (req, res) {
   try {
     const course = await getCourse(req);
     const body = filterBody(req);
-    await Attachment.destroy({
-      where: {
-        id: {
-          [Op.in]: [course.attachmentId, ...course.attachmentIds.split(",")],
+    if(req.body.banner && req.body.files){
+      await Attachment.destroy({
+        where: {
+          id: {
+            [Op.in]: [course.attachmentId, ...course.attachmentIds.split(",")],
+          },
         },
-      },
-    });
-    const [attachment, ...attachments] = await recordAttachment([
-      req.body.banner,
-      ...req.body.files,
-    ]);
-    body.attachmentId = attachment.id;
-    body.attachmentIds = attachments.map((item) => item.id).join(",");
+      });
+      const [attachment, ...attachments] = await recordAttachment([
+        req.body.banner,
+        ...req.body.files,
+      ]);
+      body.attachmentId = attachment.id;
+      body.attachmentIds = attachments.map((item) => item.id).join(",");
+    }
     await course.update(body);
 
     await clearCache(course);
