@@ -24,7 +24,7 @@ const search = async (query) => {
     highlightPreTag: '<span style="color: red">',
     highlightPostTag: "</span>",
   });
-  return search;
+  return search.hits;
 };
 
 module.exports = { addDocuments, deleteDocuments, search };

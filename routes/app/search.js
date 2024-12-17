@@ -38,14 +38,14 @@ router.get("/", async function (req, res) {
         let list, total;
         if (query.name) {
             const searchRes = await search(query.name);
-            if (searchRes.hits.length > 0) {
-                const map = searchRes.hits.reduce((map, hit) => {
+            if (searchRes.length > 0) {
+                const map = searchRes.reduce((map, hit) => {
                     return {
                         ...map,
                         [hit.id]: hit._formatted.name,
                     }
                 }, {})
-                const ids = searchRes.hits.map((item) => item.id);
+                const ids = searchRes.map((item) => item.id);
                 condition.where.id = {
                     [Op.in]: ids,
                 };
