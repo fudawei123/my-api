@@ -47,11 +47,10 @@ router.get("/", async function (req, res) {
             limit: pageSize,
             offset: offset,
         };
-        const {count, rows} = await Course.findAndCountAll(condition);
-        const list = JSON.parse(JSON.stringify(rows))
+        let {count, rows} = await Course.findAndCountAll(condition);
 
         if (req.userId) {
-            const ids = list.map((item) => item.id);
+            const ids = rows.map((item) => item.id);
             const likes = await Like.findAll({
                 where: {
                     userId: req.userId,
@@ -61,13 +60,16 @@ router.get("/", async function (req, res) {
                 },
             });
             const courseIds = likes.map((item) => item.courseId);
-            list.forEach((item) => {
-                item.isLike = courseIds.includes(item.id);
-            });
+            rows = rows.map((item) => {
+                return {
+                    ...item,
+                    isLike: courseIds.includes(item.id),
+                }
+            })
         }
 
         const data = {
-            list: list,
+            list: rows,
             total: count,
             currentPage,
             pageSize,

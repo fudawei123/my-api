@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Op } = require("sequelize");
-const { NotFound, Conflict } = require("http-errors");
+const { NotFound, Conflict, BadRequest } = require("http-errors");
 
 const { success, failure } = require("../../utils/responses");
 const {
@@ -90,11 +90,15 @@ router.get("/:id", async function (req, res) {
  */
 router.post("/", async function (req, res) {
   try {
-    const [attachment, ...attachments] = await recordAttachment([
-      req.body.banner,
-      ...req.body.files,
-    ]);
     const body = filterBody(req);
+    if(!body.banner){
+      throw new BadRequest("没传封面"); 
+    }
+
+    const [attachment, ...attachments] = await recordAttachment([
+      body.banner,
+      ...body.files,
+    ]); 
     body.userId = req.user.id;
     body.attachmentId = attachment.id;
     body.attachmentIds = attachments.map((item) => item.id).join(",");
@@ -121,6 +125,7 @@ router.delete("/:id", async function (req, res) {
     if (count > 0) {
       throw new Conflict("当前课程有章节，无法删除。");
     }
+
     await Attachment.destroy({
       where: {
         id: {
@@ -148,7 +153,8 @@ router.put("/:id", async function (req, res) {
   try {
     const course = await getCourse(req);
     const body = filterBody(req);
-    if(req.body.banner && req.body.files){
+
+    if(body.banner && body.files){
       await Attachment.destroy({
         where: {
           id: {
@@ -157,8 +163,8 @@ router.put("/:id", async function (req, res) {
         },
       });
       const [attachment, ...attachments] = await recordAttachment([
-        req.body.banner,
-        ...req.body.files,
+        body.banner,
+        ...body.files,
       ]);
       body.attachmentId = attachment.id;
       body.attachmentIds = attachments.map((item) => item.id).join(",");
@@ -264,6 +270,8 @@ function filterBody(req) {
     introductory: req.body.introductory,
     content: req.body.content,
     free: req.body.free,
+    banner: req.body.banner,
+    files: req.body.files
   };
 }
 

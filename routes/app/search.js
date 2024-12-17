@@ -49,8 +49,7 @@ router.get("/", async function (req, res) {
                 condition.where.id = {
                     [Op.in]: ids,
                 };
-                let {count, rows} = await Course.findAndCountAll(condition);
-                rows = JSON.parse(JSON.stringify(rows));
+                const {count, rows} = await Course.findAndCountAll(condition);
                 list = rows.map(item => {
                     return {
                         ...item,
@@ -68,7 +67,6 @@ router.get("/", async function (req, res) {
             total = count;
         }
 
-        list = JSON.parse(JSON.stringify(list));
         if (req.userId) {
             const ids = list.map((item) => item.id);
             const likes = await Like.findAll({
@@ -80,9 +78,12 @@ router.get("/", async function (req, res) {
                 },
             });
             const courseIds = likes.map((item) => item.courseId);
-            list.forEach((item) => {
-                item.isLike = courseIds.includes(item.id);
-            });
+            list = list.map((item) => {
+                return {
+                    ...item,
+                    isLike: courseIds.includes(item.id)
+                }
+            })
         }
         const data = {
             list: list,
