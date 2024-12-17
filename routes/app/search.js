@@ -52,7 +52,7 @@ router.get("/", async function (req, res) {
                 const {count, rows} = await Course.findAndCountAll(condition);
                 list = rows.map(item => {
                     return {
-                        ...item,
+                        ...item.toJSON(),
                         name: map[item.id]
                     }
                 });
@@ -63,7 +63,7 @@ router.get("/", async function (req, res) {
             }
         } else {
             const {count, rows} = await Course.findAndCountAll(condition);
-            list = rows;
+            list = rows.map(item => item.toJSON());
             total = count;
         }
 

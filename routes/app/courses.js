@@ -62,7 +62,7 @@ router.get("/", async function (req, res) {
             const courseIds = likes.map((item) => item.courseId);
             rows = rows.map((item) => {
                 return {
-                    ...item,
+                    ...item.toJSON(),
                     isLike: courseIds.includes(item.id),
                 }
             })
