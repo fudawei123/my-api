@@ -106,7 +106,7 @@ router.post("/", async function (req, res) {
 
     await clearCache();
 
-    await addDocuments([course]);
+    await addDocuments([{id: course.id, name: course.name}]);
 
     success(res, "创建课程成功。", course, 201);
   } catch (error) {
