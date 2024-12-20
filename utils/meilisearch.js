@@ -2,7 +2,7 @@ const { MeiliSearch } = require("meilisearch");
 
 const client = new MeiliSearch({
   host: "http://127.0.0.1:7700",
-  apiKey: "a0wjQECD6E2FBv_FJ0oBeYhKSfpzlb7rmLfb7SBvW_k",
+  apiKey: "235095ae-f542-4dda-9b9a-5294cbcd1027",
 });
 
 const coursesIndex = client.index("courses");
