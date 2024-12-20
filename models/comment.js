@@ -20,7 +20,8 @@ module.exports = (sequelize, DataTypes) => {
     replyId: DataTypes.INTEGER,
     address: DataTypes.STRING,
     likesCount: DataTypes.INTEGER,
-    text: DataTypes.TEXT
+    text: DataTypes.TEXT,
+    textType: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Comment',
