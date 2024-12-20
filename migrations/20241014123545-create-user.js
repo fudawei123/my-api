@@ -43,6 +43,12 @@ module.exports = {
         type: Sequelize.TINYINT.UNSIGNED,
         comment: "0为普通用户，100为管理员。默认为：0",
       },
+      avatar: {
+        type: Sequelize.STRING,
+      },
+      membershipExpiredAt: {
+        type: Sequelize.DATE,
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
@@ -66,6 +72,9 @@ module.exports = {
     await queryInterface.addIndex("Users", {
       fields: ["email", "username"],
       unique: true,
+    });
+    await queryInterface.addIndex("Users", {
+      fields: ["membershipExpiredAt"],
     });
   },
   async down(queryInterface, Sequelize) {

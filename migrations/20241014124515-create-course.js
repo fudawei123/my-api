@@ -50,6 +50,11 @@ module.exports = {
         defaultValue: 0,
         type: Sequelize.INTEGER.UNSIGNED,
       },
+      free: {
+        allowNull: false,
+        defaultValue: true,
+        type: Sequelize.BOOLEAN,
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
@@ -64,6 +69,9 @@ module.exports = {
     });
     await queryInterface.addIndex("Courses", {
       fields: ["userId"],
+    });
+    await queryInterface.addIndex("Courses", {
+      fields: ["free"],
     });
   },
   async down(queryInterface, Sequelize) {

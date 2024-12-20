@@ -39,6 +39,11 @@ module.exports = {
       paidAt: {
         type: Sequelize.DATE
       },
+      membershipMonths: {
+        allowNull: false,
+        defaultValue: 1,
+        type: Sequelize.Sequelize.INTEGER.UNSIGNED
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

@@ -23,7 +23,13 @@ module.exports = {
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
+      },
+      deletedAt: {
+        type: Sequelize.DATE,
       }
+    });
+    await queryInterface.addIndex("Articles", {
+      fields: ["deletedAt"],
     });
   },
   async down(queryInterface, Sequelize) {

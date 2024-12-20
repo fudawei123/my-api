@@ -28,6 +28,11 @@ module.exports = {
         defaultValue: 1,
         type: Sequelize.INTEGER.UNSIGNED,
       },
+      free: {
+        allowNull: false,
+        defaultValue: true,
+        type: Sequelize.BOOLEAN,
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

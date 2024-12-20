@@ -3,11 +3,11 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.addColumn('Orders', 'membershipMonths', {
-      allowNull: false,
-      defaultValue: 1,
-      type: Sequelize.Sequelize.INTEGER.UNSIGNED
-    });
+    // await queryInterface.addColumn('Orders', 'membershipMonths', {
+    //   allowNull: false,
+    //   defaultValue: 1,
+    //   type: Sequelize.Sequelize.INTEGER.UNSIGNED
+    // });
   },
 
   async down (queryInterface, Sequelize) {
