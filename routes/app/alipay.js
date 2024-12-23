@@ -47,21 +47,22 @@ router.post("/pay/:platform", userAuth, async function (req, res, next) {
  * 支付宝支付成功后，跳转页面
  * GET /alipay/finish
  */
-router.get('/finish', async function (req, res) {
+router.get("/finish", async function (req, res) {
   try {
     const alipayData = req.query;
     const verify = alipaySdk.checkNotifySign(alipayData);
 
     // 验签成功，更新订单与会员信息
     if (verify) {
-      await paidSuccess(alipayData);
-      res.redirect('https://clwy.cn/users/course_orders');
+      const { out_trade_no, trade_no, timestamp } = alipayData;
+      await paidSuccess(out_trade_no, trade_no, timestamp);
+      res.redirect("https://clwy.cn/users/course_orders");
       // res.send('支付成功');
     } else {
-      throw new BadRequest('支付验签失败。');
+      throw new BadRequest("支付验签失败。");
     }
   } catch (error) {
-    failure(res, error)
+    failure(res, error);
   }
 });
 
@@ -69,57 +70,90 @@ router.get('/finish', async function (req, res) {
  * 支付宝异步通知
  * POST /alipay/notify
  */
-router.post('/notify', async function (req, res) {
+router.post("/notify", async function (req, res) {
   try {
     const alipayData = req.body;
     const verify = alipaySdk.checkNotifySign(alipayData);
 
     // 如果验签成功，更新订单与会员信息
     if (verify) {
-      await paidSuccess(alipayData);
-      res.send('success');
+      const { out_trade_no, trade_no, gmt_payment } = alipayData;
+      await paidSuccess(out_trade_no, trade_no, gmt_payment);
+      res.send("success");
     } else {
-      res.send('fail');
+      res.send("fail");
     }
   } catch (error) {
-    failure(res, error)
+    failure(res, error);
+  }
+});
+
+/**
+ * 主动查询支付宝订单状态
+ * POST /alipay/query
+ */
+router.post("/query", userAuth, async function (req, res) {
+  try {
+    // 查询订单
+    const order = await getOrder(req);
+
+    const result = await alipaySdk.exec("alipay.trade.query", {
+      bizContent: {
+        out_trade_no: order.outTradeNo,
+      },
+    });
+
+    // 获取支付结果相关信息
+    const { tradeStatus, outTradeNo, tradeNo, sendPayDate } = result;
+
+    // TRADE_SUCCESS 说明支付成功
+    if (tradeStatus === "TRADE_SUCCESS") {
+      // 更新订单状态
+      await paidSuccess(outTradeNo, tradeNo, sendPayDate);
+    }
+
+    success(res, "执行成功，请重新查询订单。");
+  } catch (error) {
+    failure(res, error);
   }
 });
 
 /**
  * 支付成功后，更新订单状态和会员信息
- * @param alipayData
+ * @param outTradeNo
+ * @param tradeNo
+ * @param paidAt
  * @returns {Promise<void>}
  */
-async function paidSuccess(alipayData) {
-  const { out_trade_no, trade_no, timestamp } = alipayData;
+async function paidSuccess(outTradeNo, tradeNo, paidAt) {
+  // 查询当前订单
+  const order = await Order.findOne({ where: { outTradeNo: outTradeNo } });
 
-  // 查询当前订单。
-  const order = await Order.findOne({ where: { outTradeNo: out_trade_no } });
-
-  // 对于状态已更新的订单，直接返回。防止用户重复请求，重复增加大会员有效期。
+  // 对于状态已更新的订单，直接返回。防止用户重复请求，重复增加大会员有效期
   if (order.status > 0) {
     return;
   }
 
   // 更新订单状态
   await order.update({
-    tradeNo: trade_no,    // 流水号
-    status: 1,            // 订单状态：已支付
-    paymentMethod: 0,     // 支付方式：支付宝
-    paidAt: timestamp,    // 支付时间
-  })
+    tradeNo: tradeNo, // 流水号
+    status: 1, // 订单状态：已支付
+    paymentMethod: 0, // 支付方式：支付宝
+    paidAt: paidAt, // 支付时间
+  });
 
   // 查询订单对应的用户
   const user = await User.findByPk(order.userId);
 
-  // 将用户组设置为大会员。可防止管理员创建订单，并将用户组修改为大会员。
+  // 将用户组设置为大会员。可防止管理员创建订单，并将用户组修改为大会员
   if (user.role === 0) {
     user.role = 1;
   }
 
   // 使用moment.js，增加大会员有效期
-  user.membershipExpiredAt = moment(user.expiredAt).add(order.membershipMonths, 'months').toDate();
+  user.membershipExpiredAt = moment(user.membershipExpiredAt || new Date())
+    .add(order.membershipMonths, "months")
+    .toDate();
 
   // 保存用户信息
   await user.save();
@@ -148,8 +182,8 @@ async function getOrder(req) {
     throw new NotFound(`订单号: ${outTradeNo} 的订单未找到。`);
   }
 
-  if (order.status > 1) {
-    throw new BadRequest("订单已经支付或失效，无法付款。");
+  if (order.status > 0) {
+    throw new BadRequest("订单已支付或取消。");
   }
 
   return order;
