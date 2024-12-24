@@ -49,7 +49,7 @@ router.get('/', async function (req, res) {
       }
     });
   } catch (error) {
-    failure(res, error);
+    failure(req, res, error);
   }
 });
 
@@ -62,7 +62,7 @@ router.get('/:outTradeNo', async function (req, res) {
     const order = await getOrder(req);
     success(res, '查询订单详情成功。', order);
   } catch (error) {
-    failure(res, error);
+    failure(req, res, error);
   }
 });
 

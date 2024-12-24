@@ -45,7 +45,7 @@ router.get("/", async function (req, res) {
       pageSize,
     });
   } catch (error) {
-    failure(res, error);
+    failure(req, res, error);
   }
 });
 
@@ -58,7 +58,7 @@ router.get("/:outTradeNo", async function (req, res) {
     const order = await getOrder(req);
     success(res, "查询订单详情成功。", order);
   } catch (error) {
-    failure(res, error);
+    failure(req, res, error);
   }
 });
 
@@ -82,7 +82,7 @@ router.post("/", async function (req, res, next) {
 
     success(res, "订单创建成功。", { order });
   } catch (error) {
-    failure(res, "订单创建失败。", error);
+    failure(req, res, "订单创建失败。", error);
   }
 });
 

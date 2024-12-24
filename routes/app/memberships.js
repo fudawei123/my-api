@@ -20,7 +20,7 @@ router.get('/', async function (req, res, next) {
 
         success(res, '查询大会员列表成功。', { memberships });
     } catch (error) {
-        failure(res, error);
+        failure(req, res, error);
     }
 });
 

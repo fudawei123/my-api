@@ -30,7 +30,7 @@ router.get('/', async function (req, res) {
             memberships: memberships,
         });
     } catch (error) {
-        failure(res, error);
+        failure(req, res, error);
     }
 });
 
@@ -44,7 +44,7 @@ router.get('/:id', async function (req, res) {
         const membership = await getMembership(req);
         success(res, '查询大会员成功。', { membership });
     } catch (error) {
-        failure(res, error);
+        failure(req, res, error);
     }
 });
 
@@ -61,7 +61,7 @@ router.post('/', async function (req, res) {
 
         success(res, '创建大会员成功。', { membership }, 201);
     } catch (error) {
-        failure(res, error);
+        failure(req, res, error);
     }
 });
 
@@ -79,7 +79,7 @@ router.put('/:id', async function (req, res) {
 
         success(res, '更新大会员成功。', { membership: membership });
     } catch (error) {
-        failure(res, error);
+        failure(req, res, error);
     }
 });
 
@@ -95,7 +95,7 @@ router.delete('/:id', async function (req, res) {
 
         success(res, '删除大会员成功。');
     } catch (error) {
-        failure(res, error);
+        failure(req, res, error);
     }
 });
 
