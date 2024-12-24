@@ -5,6 +5,10 @@ var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 require("dotenv").config();
 
+const { emailMQ, logMQ } = require("./utils/rabbit-mq");
+emailMQ.consumer();
+logMQ.consumer();
+
 const appRouter = require("./routes");
 
 var app = express();
@@ -25,6 +29,6 @@ app.use(cors());
 // };
 // app.use(cors(corsOptions));
 
-app.use('/', appRouter)
+app.use("/", appRouter);
 
 module.exports = app;

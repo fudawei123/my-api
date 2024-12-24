@@ -1,5 +1,6 @@
-const sendMail = require('./mail');
-const amqp = require('amqplib');
+const sendMail = require("./mail");
+const amqp = require("amqplib");
+const { Log } = require("../models");
 
 let connection = null;
 const connectToRabbitMQ = async () => {
@@ -13,32 +14,38 @@ class MQ {
     constructor(queueName) {
         this.queueName = queueName;
     }
-    async connectToRabbitMQ(){
+    async connectToRabbitMQ() {
         try {
-            await connectToRabbitMQ()
-            if (this.channel) return
+            await connectToRabbitMQ();
+            if (this.channel) return;
             this.channel = await connection.createChannel();
             await this.channel.assertQueue(this.queueName, { durable: true });
         } catch (error) {
-            console.error('RabbitMQ 连接失败：', error);
+            console.error("RabbitMQ 连接失败：", error);
         }
     }
-    async producer(msg){
+    async producer(msg) {
         try {
             await this.connectToRabbitMQ();
-            this.channel.sendToQueue(this.queueName, Buffer.from(JSON.stringify(msg)), { persistent: true });
+            this.channel.sendToQueue(
+                this.queueName,
+                Buffer.from(JSON.stringify(msg)),
+                { persistent: true }
+            );
         } catch (error) {
             console.error(`${this.queueName}生产者错误：`, error);
         }
     }
-    async consumer(cb){
+    async consumer(cb) {
         try {
             await this.connectToRabbitMQ();
-            this.channel.consume(this.queueName,
+            this.channel.consume(
+                this.queueName,
                 (msg) => {
                     const message = JSON.parse(msg.content.toString());
-                    cb(message)
-                }, {
+                    cb(message);
+                },
+                {
                     noAck: true,
                 }
             );
@@ -56,10 +63,10 @@ class EmailMQ extends MQ {
     producer(msg) {
         super.producer(msg);
     }
-    consumer(){
+    consumer() {
         super.consumer(async (msg) => {
-            await sendMail(message.to, message.subject, message.html);
-        })
+            await sendMail(msg.to, msg.subject, msg.html);
+        });
     }
 }
 
@@ -68,25 +75,17 @@ class LogMQ extends MQ {
         super(queueName);
     }
 
-    producer(req, error, statusCode, errors) {
-        const msg = {
-            statusCode,
-            url: req?.originalUrl || null,
-            body: req ? JSON.stringify(req.body) : null,
-            errors: JSON.stringify(errors),
-            stack: error.stack,
-            message: error.name
-        }
+    producer(msg) {
         super.producer(msg);
     }
-    consumer(){
-        super.consumer((msg) => {
-            console.log(msg)
-        })
+    consumer() {
+        super.consumer(async (msg) => {
+            await Log.create(msg);
+        });
     }
 }
 
 module.exports = {
-    emailMQ: new EmailMQ('email_queue'),
-    logMQ: new LogMQ('log_queue')
+    emailMQ: new EmailMQ("email_queue"),
+    logMQ: new LogMQ("log_queue"),
 };
