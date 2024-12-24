@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+    </head>
+    <body>
+        <h1>支付完成 5秒后跳转</h1>
+
+        <script>
+            setTimeout(() => {
+                window.postMessage("pay-finish", "*")
+            }, 5000);
+        </script>
+    </body>
+</html>

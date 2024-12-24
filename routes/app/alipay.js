@@ -3,7 +3,7 @@ const router = express.Router();
 const { User, Order, sequelize } = require("../../models");
 const { success, failure } = require("../../utils/responses");
 const { NotFound, BadRequest } = require("http-errors");
-// const alipaySdk = require("../../utils/alipay");
+const alipaySdk = require("../../utils/alipay");
 const userAuth = require("../../middlewares/user-auth");
 const moment = require("moment");
 const logger = require("../../utils/logger");
@@ -31,13 +31,13 @@ router.post("/pay/:platform", userAuth, async function (req, res, next) {
         };
 
         // 支付页面接口，返回 HTML 代码片段
-        // const html = alipaySdk.pageExecute(method, "GET", {
-        //   bizContent,
-        //   returnUrl: process.env.ALIPAY_RETURN_URL, // 当支付完成后，支付宝跳转地址
-        //   notify_url: process.env.ALIPAY_NOTIFY_URL, // 异步通知回调地址
-        // });
+        const html = alipaySdk.pageExecute(method, "GET", {
+            bizContent,
+            returnUrl: process.env.ALIPAY_RETURN_URL, // 当支付完成后，支付宝跳转地址
+            notify_url: process.env.ALIPAY_NOTIFY_URL, // 异步通知回调地址
+        });
 
-        // success(res, "支付地址生成成功", { html });
+        success(res, "支付地址生成成功", html);
     } catch (error) {
         failure(req, res, error);
     }
@@ -56,7 +56,7 @@ router.get("/finish", async function (req, res) {
         if (verify) {
             const { out_trade_no, trade_no, timestamp } = alipayData;
             await paidSuccess(out_trade_no, trade_no, timestamp);
-            res.redirect("https://clwy.cn/users/course_orders");
+            res.redirect("http://localhost:3000/pay-finish.html");
             // res.send('支付成功');
         } else {
             throw new BadRequest("支付验签失败。");

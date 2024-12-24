@@ -80,7 +80,7 @@ router.post("/", async function (req, res, next) {
       membershipMonths: membership.durationMonths,
     });
 
-    success(res, "订单创建成功。", { order });
+    success(res, "订单创建成功。", order);
   } catch (error) {
     failure(req, res, "订单创建失败。", error);
   }
