@@ -36,6 +36,6 @@ router.use("/captcha", captchaRouter);
 router.use("/comments", commentsRouter);
 router.use("/memberships", membershipsRouter);
 router.use("/orders", userAuth(), ordersRouter);
-router.use('/alipay', alipayRouter);
+// router.use('/alipay', alipayRouter);
 
 module.exports = router;
