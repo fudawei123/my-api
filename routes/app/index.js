@@ -18,7 +18,7 @@ const captchaRouter = require("./captcha");
 const commentsRouter = require("./comments");
 const membershipsRouter = require("./memberships");
 const ordersRouter = require("./orders");
-const alipayRouter = require('./alipay');
+// const alipayRouter = require('./alipay');
 
 router.use("/", homeRouter);
 router.use("/categories", categoriesRouter);
