@@ -13,7 +13,7 @@ const logger = require("../../utils/logger");
  * POST /alipay/pay/page    电脑页面
  * POST /alipay/pay/wap     手机页面
  */
-router.post("/pay/:platform", userAuth, async function (req, res, next) {
+router.post("/pay/:platform", userAuth(), async function (req, res, next) {
     try {
         // 判断是电脑页面，还是手机页面
         const isPC = req.params.platform === "page";
@@ -161,10 +161,10 @@ async function paidSuccess(outTradeNo, tradeNo, paidAt) {
         }
 
         // 使用moment.js，增加大会员有效期
-        // user.membershipExpiredAt = moment(user.membershipExpiredAt || new Date())
-        //   .add(order.membershipMonths, 'months')
-        //   .toDate();
-        user.membershipExpiredAt = "2025年10月10日";
+        user.membershipExpiredAt = moment(user.membershipExpiredAt || new Date())
+            .add(order.membershipMonths, 'months')
+            .toDate();
+        // user.membershipExpiredAt = "2025年10月10日";
 
         // 保存用户信息（在事务中）
         await user.save({ transaction: t });
