@@ -1,24 +1,24 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { User, Order, sequelize } = require("../../models");
-const { success, failure } = require("../../utils/responses");
-const { NotFound, BadRequest } = require("http-errors");
-const alipaySdk = require("../../utils/alipay");
-const userAuth = require("../../middlewares/user-auth");
-const moment = require("moment");
-const logger = require("../../utils/logger");
+const { User, Order, sequelize } = require('../../models');
+const { success, failure } = require('../../utils/responses');
+const { NotFound, BadRequest } = require('http-errors');
+const alipaySdk = require('../../utils/alipay');
+const userAuth = require('../../middlewares/user-auth');
+const moment = require('moment');
+const logger = require('../../utils/logger');
 
 /**
  * 支付宝支付
  * POST /alipay/pay/page    电脑页面
  * POST /alipay/pay/wap     手机页面
  */
-router.post("/pay/:platform", userAuth(), async function (req, res, next) {
+router.post('/pay/:platform', userAuth(), async function (req, res, next) {
     try {
         // 判断是电脑页面，还是手机页面
-        const isPC = req.params.platform === "page";
-        const method = isPC ? "alipay.trade.page.pay" : "alipay.trade.wap.pay";
-        const productCode = isPC ? "FAST_INSTANT_TRADE_PAY" : "QUICK_WAP_WAY";
+        const isPC = req.params.platform === 'page';
+        const method = isPC ? 'alipay.trade.page.pay' : 'alipay.trade.wap.pay';
+        const productCode = isPC ? 'FAST_INSTANT_TRADE_PAY' : 'QUICK_WAP_WAY';
 
         // 支付订单信息
         const order = await getOrder(req);
@@ -31,13 +31,13 @@ router.post("/pay/:platform", userAuth(), async function (req, res, next) {
         };
 
         // 支付页面接口，返回 HTML 代码片段
-        const html = alipaySdk.pageExecute(method, "GET", {
+        const html = alipaySdk.pageExecute(method, 'GET', {
             bizContent,
             returnUrl: process.env.ALIPAY_RETURN_URL, // 当支付完成后，支付宝跳转地址
             notify_url: process.env.ALIPAY_NOTIFY_URL, // 异步通知回调地址
         });
 
-        success(res, "支付地址生成成功", html);
+        success(res, '支付地址生成成功', html);
     } catch (error) {
         failure(req, res, error);
     }
@@ -47,7 +47,7 @@ router.post("/pay/:platform", userAuth(), async function (req, res, next) {
  * 支付宝支付成功后，跳转页面
  * GET /alipay/finish
  */
-router.get("/finish", async function (req, res) {
+router.get('/finish', async function (req, res) {
     try {
         const alipayData = req.query;
         const verify = alipaySdk.checkNotifySign(alipayData);
@@ -56,10 +56,10 @@ router.get("/finish", async function (req, res) {
         if (verify) {
             const { out_trade_no, trade_no, timestamp } = alipayData;
             await paidSuccess(out_trade_no, trade_no, timestamp);
-            res.redirect("http://localhost:3000/pay-finish.html");
+            res.redirect('http://localhost:3000/pay-finish.html');
             // res.send('支付成功');
         } else {
-            throw new BadRequest("支付验签失败。");
+            throw new BadRequest('支付验签失败。');
         }
     } catch (error) {
         failure(req, res, error);
@@ -70,7 +70,7 @@ router.get("/finish", async function (req, res) {
  * 支付宝异步通知
  * POST /alipay/notify
  */
-router.post("/notify", async function (req, res) {
+router.post('/notify', async function (req, res) {
     try {
         const alipayData = req.body;
         const verify = alipaySdk.checkNotifySign(alipayData);
@@ -79,9 +79,9 @@ router.post("/notify", async function (req, res) {
         if (verify) {
             const { out_trade_no, trade_no, gmt_payment } = alipayData;
             await paidSuccess(out_trade_no, trade_no, gmt_payment);
-            res.send("success");
+            res.send('success');
         } else {
-            res.send("fail");
+            res.send('fail');
         }
     } catch (error) {
         failure(req, res, error);
@@ -92,12 +92,12 @@ router.post("/notify", async function (req, res) {
  * 主动查询支付宝订单状态
  * POST /alipay/query
  */
-router.post("/query", userAuth, async function (req, res) {
+router.post('/query', userAuth, async function (req, res) {
     try {
         // 查询订单
         const order = await getOrder(req);
 
-        const result = await alipaySdk.exec("alipay.trade.query", {
+        const result = await alipaySdk.exec('alipay.trade.query', {
             bizContent: {
                 out_trade_no: order.outTradeNo,
             },
@@ -107,12 +107,12 @@ router.post("/query", userAuth, async function (req, res) {
         const { tradeStatus, outTradeNo, tradeNo, sendPayDate } = result;
 
         // TRADE_SUCCESS 说明支付成功
-        if (tradeStatus === "TRADE_SUCCESS") {
+        if (tradeStatus === 'TRADE_SUCCESS') {
             // 更新订单状态
             await paidSuccess(outTradeNo, tradeNo, sendPayDate);
         }
 
-        success(res, "执行成功，请重新查询订单。");
+        success(res, '执行成功，请重新查询订单。');
     } catch (error) {
         failure(req, res, error);
     }
@@ -161,7 +161,9 @@ async function paidSuccess(outTradeNo, tradeNo, paidAt) {
         }
 
         // 使用moment.js，增加大会员有效期
-        user.membershipExpiredAt = moment(user.membershipExpiredAt || new Date())
+        user.membershipExpiredAt = moment(
+            user.membershipExpiredAt || new Date()
+        )
             .add(order.membershipMonths, 'months')
             .toDate();
         // user.membershipExpiredAt = "2025年10月10日";
@@ -187,7 +189,7 @@ async function paidSuccess(outTradeNo, tradeNo, paidAt) {
 async function getOrder(req) {
     const { outTradeNo } = req.body;
     if (!outTradeNo) {
-        throw new BadRequest("订单号不能为空。");
+        throw new BadRequest('订单号不能为空。');
     }
 
     const order = await Order.findOne({
@@ -203,7 +205,7 @@ async function getOrder(req) {
     }
 
     if (order.status > 0) {
-        throw new BadRequest("订单已支付或取消。");
+        throw new BadRequest('订单已支付或取消。');
     }
 
     return order;

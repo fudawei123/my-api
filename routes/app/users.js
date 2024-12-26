@@ -1,18 +1,25 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const {BadRequest, NotFound} = require("http-errors");
-const bcrypt = require("bcryptjs");
-const {Op} = require("sequelize");
+const { BadRequest, NotFound } = require('http-errors');
+const bcrypt = require('bcryptjs');
+const { Op } = require('sequelize');
 
-const {User, Like, Course, Attachment, sequelize, Comment} = require("../../models");
-const {success, failure} = require("../../utils/responses");
-const {setKey, getKey, delKey} = require("../../utils/redis");
+const {
+    User,
+    Like,
+    Course,
+    Attachment,
+    sequelize,
+    Comment,
+} = require('../../models');
+const { success, failure } = require('../../utils/responses');
+const { setKey, getKey, delKey } = require('../../utils/redis');
 
 /**
  * 查询当前登录用户详情
  * GET /users/me
  */
-router.get("/me", async function (req, res) {
+router.get('/me', async function (req, res) {
     try {
         let user = await getKey(`user:${req.userId}`);
         if (!user) {
@@ -27,7 +34,9 @@ router.get("/me", async function (req, res) {
             },
         });
 
-        success(res, "查询当前用户信息成功。", {user: {...user, likesCount}});
+        success(res, '查询当前用户信息成功。', {
+            user: { ...user, likesCount },
+        });
     } catch (error) {
         failure(req, res, error);
     }
@@ -37,7 +46,7 @@ router.get("/me", async function (req, res) {
  * 更新用户信息
  * PUT /users/info
  */
-router.put("/info", async function (req, res) {
+router.put('/info', async function (req, res) {
     try {
         const body = {
             nickname: req.body.nickname,
@@ -52,7 +61,7 @@ router.put("/info", async function (req, res) {
 
         await clearCache(user);
 
-        success(res, "更新用户信息成功。", {user});
+        success(res, '更新用户信息成功。', { user });
     } catch (error) {
         failure(req, res, error);
     }
@@ -62,7 +71,7 @@ router.put("/info", async function (req, res) {
  * 更新账户信息
  * PUT /users/account
  */
-router.put("/account", async function (req, res) {
+router.put('/account', async function (req, res) {
     try {
         const body = {
             email: req.body.email,
@@ -73,11 +82,11 @@ router.put("/account", async function (req, res) {
         };
 
         if (!body.currentPassword) {
-            throw new BadRequest("当前密码必须填写。");
+            throw new BadRequest('当前密码必须填写。');
         }
 
         if (body.password !== body.passwordConfirmation) {
-            throw new BadRequest("两次输入的密码不一致。");
+            throw new BadRequest('两次输入的密码不一致。');
         }
 
         // 加上 true 参数，可以查询到加密后的密码
@@ -89,7 +98,7 @@ router.put("/account", async function (req, res) {
             user.password
         );
         if (!isPasswordValid) {
-            throw new BadRequest("当前密码不正确。");
+            throw new BadRequest('当前密码不正确。');
         }
 
         await user.update(body);
@@ -99,7 +108,7 @@ router.put("/account", async function (req, res) {
 
         await clearCache(user);
 
-        success(res, "更新账户信息成功。", {user});
+        success(res, '更新账户信息成功。', { user });
     } catch (error) {
         failure(req, res, error);
     }
@@ -108,11 +117,11 @@ router.put("/account", async function (req, res) {
 /**
  * 查询用户点赞过的课程
  */
-router.get("/likeCourses", async function (req, res) {
+router.get('/likeCourses', async function (req, res) {
     // sql
     try {
         const likeCourses = await Like.findAll({
-            where: {userId: req.user.id},
+            where: { userId: req.user.id },
         });
 
         const ids = likeCourses.map((item) => item.courseId);
@@ -122,16 +131,16 @@ router.get("/likeCourses", async function (req, res) {
         const offset = (currentPage - 1) * pageSize;
 
         const condition = {
-            attributes: {exclude: ["CategoryId", "UserId", "content"]},
+            attributes: { exclude: ['CategoryId', 'UserId', 'content'] },
             include: [
                 {
                     model: Attachment,
-                    as: "attachment",
+                    as: 'attachment',
                 },
                 {
                     model: User,
-                    as: "user",
-                    attributes: {exclude: ["password"]},
+                    as: 'user',
+                    attributes: { exclude: ['password'] },
                 },
             ],
             where: {
@@ -139,12 +148,12 @@ router.get("/likeCourses", async function (req, res) {
                     [Op.in]: ids,
                 },
             },
-            order: [["id", "DESC"]],
+            order: [['id', 'DESC']],
             limit: pageSize,
             offset: offset,
         };
-        const {count, rows} = await Course.findAndCountAll(condition);
-        const list = JSON.parse(JSON.stringify(rows))
+        const { count, rows } = await Course.findAndCountAll(condition);
+        const list = JSON.parse(JSON.stringify(rows));
 
         if (req.userId) {
             const ids = list.map((item) => item.id);
@@ -168,7 +177,7 @@ router.get("/likeCourses", async function (req, res) {
             currentPage,
             pageSize,
         };
-        success(res, "查询用户点赞过的课程成功。", data);
+        success(res, '查询用户点赞过的课程成功。', data);
     } catch (error) {
         failure(req, res, error);
     }
@@ -177,7 +186,7 @@ router.get("/likeCourses", async function (req, res) {
 /**
  * 查询回复的评论
  */
-router.get("/replyComments", async function (req, res) {
+router.get('/replyComments', async function (req, res) {
     try {
         const query = req.query;
         const currentPage = Math.abs(Number(query.currentPage)) || 1;
@@ -199,22 +208,22 @@ router.get("/replyComments", async function (req, res) {
                     [Op.in]: ids,
                 },
             },
-            order: [["createdAt", "DESC"]],
+            order: [['createdAt', 'DESC']],
         });
         const list = JSON.parse(JSON.stringify(replyComments));
-        const replyIds = []
+        const replyIds = [];
         for (const item of list) {
-            const {replyId, userId} = item
+            const { replyId, userId } = item;
             if (req.userId === userId) {
-                replyIds.push(replyId)
+                replyIds.push(replyId);
             }
         }
 
         const count = results.length;
         const rows = results.slice(offset, offset + pageSize);
         rows.forEach((item) => {
-            item.isReply = replyIds.includes(item.id)
-        })
+            item.isReply = replyIds.includes(item.id);
+        });
         const data = {
             list: rows,
             total: count,
@@ -222,7 +231,7 @@ router.get("/replyComments", async function (req, res) {
             pageSize,
         };
 
-        success(res, "查询回复的评论成功。", data);
+        success(res, '查询回复的评论成功。', data);
     } catch (error) {
         failure(req, res, error);
     }
@@ -240,7 +249,7 @@ async function getUser(req, showPassword = false) {
     let condition = {};
     if (!showPassword) {
         condition = {
-            attributes: {exclude: ["password"]},
+            attributes: { exclude: ['password'] },
         };
     }
 

@@ -37,6 +37,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@types/sequelize": "^4.28.20"
+    "@types/sequelize": "^4.28.20",
+    "prettier": "^3.4.2"
   }
 }

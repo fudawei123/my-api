@@ -16,12 +16,15 @@ router.get('/', async function (req, res) {
 
         const condition = {
             where: {},
-            order: [['rank', 'ASC'], ['id', 'ASC']],
+            order: [
+                ['rank', 'ASC'],
+                ['id', 'ASC'],
+            ],
         };
 
         if (query.name) {
             condition.where.name = {
-                [Op.like]: `%${query.name}%`
+                [Op.like]: `%${query.name}%`,
             };
         }
 
@@ -33,7 +36,6 @@ router.get('/', async function (req, res) {
         failure(req, res, error);
     }
 });
-
 
 /**
  * 查询大会员详情
@@ -107,7 +109,7 @@ async function getMembership(req) {
 
     const membership = await Membership.findByPk(id);
     if (!membership) {
-        throw new NotFound(`ID: ${id}的大会员未找到。`)
+        throw new NotFound(`ID: ${id}的大会员未找到。`);
     }
 
     return membership;
@@ -124,7 +126,7 @@ function filterBody(req) {
         durationMonths: req.body.durationMonths,
         price: req.body.price,
         rank: req.body.rank,
-        description: req.body.description
+        description: req.body.description,
     };
 }
 

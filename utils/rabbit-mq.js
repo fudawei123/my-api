@@ -1,6 +1,6 @@
-const sendMail = require("./mail");
-const amqp = require("amqplib");
-const { Log } = require("../models");
+const sendMail = require('./mail');
+const amqp = require('amqplib');
+const { Log } = require('../models');
 
 let connection = null;
 const connectToRabbitMQ = async () => {
@@ -21,7 +21,7 @@ class MQ {
             this.channel = await connection.createChannel();
             await this.channel.assertQueue(this.queueName, { durable: true });
         } catch (error) {
-            console.error("RabbitMQ 连接失败：", error);
+            console.error('RabbitMQ 连接失败：', error);
         }
     }
     async producer(msg) {
@@ -86,6 +86,6 @@ class LogMQ extends MQ {
 }
 
 module.exports = {
-    emailMQ: new EmailMQ("email_queue"),
-    logMQ: new LogMQ("log_queue"),
+    emailMQ: new EmailMQ('email_queue'),
+    logMQ: new LogMQ('log_queue'),
 };

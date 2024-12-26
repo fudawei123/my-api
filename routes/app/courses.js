@@ -1,7 +1,7 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const {Op} = require("sequelize");
-const {NotFound, BadRequest} = require("http-errors");
+const { Op } = require('sequelize');
+const { NotFound, BadRequest } = require('http-errors');
 const {
     Course,
     Category,
@@ -9,15 +9,15 @@ const {
     User,
     Attachment,
     Like,
-} = require("../../models");
-const {success, failure} = require("../../utils/responses");
-const {setKey, getKey, incr} = require("../../utils/redis");
+} = require('../../models');
+const { success, failure } = require('../../utils/responses');
+const { setKey, getKey, incr } = require('../../utils/redis');
 
 /**
  * 查询课程列表
  * GET /courses
  */
-router.get("/", async function (req, res) {
+router.get('/', async function (req, res) {
     try {
         const query = req.query;
         const categoryId = query.categoryId;
@@ -26,28 +26,28 @@ router.get("/", async function (req, res) {
         const offset = (currentPage - 1) * pageSize;
 
         if (!categoryId) {
-            throw new BadRequest("获取课程列表失败，分类ID不能为空。");
+            throw new BadRequest('获取课程列表失败，分类ID不能为空。');
         }
 
         const condition = {
-            attributes: {exclude: ["CategoryId", "UserId", "content"]},
+            attributes: { exclude: ['CategoryId', 'UserId', 'content'] },
             include: [
                 {
                     model: Attachment,
-                    as: "attachment",
+                    as: 'attachment',
                 },
                 {
                     model: User,
-                    as: "user",
-                    attributes: {exclude: ["password"]},
+                    as: 'user',
+                    attributes: { exclude: ['password'] },
                 },
             ],
-            where: {categoryId: categoryId},
-            order: [["id", "DESC"]],
+            where: { categoryId: categoryId },
+            order: [['id', 'DESC']],
             limit: pageSize,
             offset: offset,
         };
-        let {count, rows} = await Course.findAndCountAll(condition);
+        let { count, rows } = await Course.findAndCountAll(condition);
 
         if (req.userId) {
             const ids = rows.map((item) => item.id);
@@ -64,8 +64,8 @@ router.get("/", async function (req, res) {
                 return {
                     ...item.toJSON(),
                     isLike: courseIds.includes(item.id),
-                }
-            })
+                };
+            });
         }
 
         const data = {
@@ -74,7 +74,7 @@ router.get("/", async function (req, res) {
             currentPage,
             pageSize,
         };
-        success(res, "查询课程列表成功。", data);
+        success(res, '查询课程列表成功。', data);
     } catch (error) {
         failure(req, res, error);
     }
@@ -84,15 +84,15 @@ router.get("/", async function (req, res) {
  * 查询课程详情
  * GET /courses/:id
  */
-router.get("/:id", async function (req, res) {
+router.get('/:id', async function (req, res) {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
 
         // 查询课程
         let course = await getKey(`course:${id}`);
         if (!course) {
             course = await Course.findByPk(id, {
-                attributes: {exclude: ["CategoryId", "UserId"]},
+                attributes: { exclude: ['CategoryId', 'UserId'] },
             });
             course = course.toJSON();
             if (!course) {
@@ -107,7 +107,7 @@ router.get("/:id", async function (req, res) {
         const attachments = await Attachment.findAll({
             where: {
                 id: {
-                    [Op.in]: course.attachmentIds.split(","),
+                    [Op.in]: course.attachmentIds.split(','),
                 },
             },
         });
@@ -123,7 +123,7 @@ router.get("/:id", async function (req, res) {
         let user = await getKey(`user:${course.userId}`);
         if (!user) {
             user = await User.findByPk(course.userId, {
-                attributes: {exclude: ["password"]},
+                attributes: { exclude: ['password'] },
             });
             await setKey(`user:${course.userId}`, user);
         }
@@ -132,18 +132,18 @@ router.get("/:id", async function (req, res) {
         let chapters = await getKey(`chapters:${course.id}`);
         if (!chapters) {
             chapters = await Chapter.findAll({
-                attributes: {exclude: ["CourseId", "content"]},
-                where: {courseId: course.id},
+                attributes: { exclude: ['CourseId', 'content'] },
+                where: { courseId: course.id },
                 order: [
-                    ["rank", "ASC"],
-                    ["id", "DESC"],
+                    ['rank', 'ASC'],
+                    ['id', 'DESC'],
                 ],
             });
             await setKey(`chapters:${course.id}`, chapters);
         }
 
-        success(res, "查询课程成功。", {
-            course: {...course, readCount, files: attachments},
+        success(res, '查询课程成功。', {
+            course: { ...course, readCount, files: attachments },
             category,
             user,
             chapters,

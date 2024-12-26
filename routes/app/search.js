@@ -1,16 +1,16 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const {Op} = require("sequelize");
+const { Op } = require('sequelize');
 
-const {Course, Like, Attachment, User} = require("../../models");
-const {success, failure} = require("../../utils/responses");
-const {search} = require("../../utils/meilisearch");
+const { Course, Like, Attachment, User } = require('../../models');
+const { success, failure } = require('../../utils/responses');
+const { search } = require('../../utils/meilisearch');
 
 /**
  * 搜索课程
  * GET /search
  */
-router.get("/", async function (req, res) {
+router.get('/', async function (req, res) {
     try {
         const query = req.query;
         const currentPage = Math.abs(Number(query.currentPage)) || 1;
@@ -19,19 +19,19 @@ router.get("/", async function (req, res) {
 
         const condition = {
             where: {},
-            attributes: {exclude: ["CategoryId", "UserId", "content"]},
+            attributes: { exclude: ['CategoryId', 'UserId', 'content'] },
             include: [
                 {
                     model: Attachment,
-                    as: "attachment",
+                    as: 'attachment',
                 },
                 {
                     model: User,
-                    as: "user",
-                    attributes: {exclude: ["password"]},
+                    as: 'user',
+                    attributes: { exclude: ['password'] },
                 },
             ],
-            order: [["id", "DESC"]],
+            order: [['id', 'DESC']],
             limit: pageSize,
             offset: offset,
         };
@@ -43,18 +43,18 @@ router.get("/", async function (req, res) {
                     return {
                         ...map,
                         [hit.id]: hit._formatted.name,
-                    }
-                }, {})
+                    };
+                }, {});
                 const ids = searchRes.map((item) => item.id);
                 condition.where.id = {
                     [Op.in]: ids,
                 };
-                const {count, rows} = await Course.findAndCountAll(condition);
-                list = rows.map(item => {
+                const { count, rows } = await Course.findAndCountAll(condition);
+                list = rows.map((item) => {
                     return {
                         ...item.toJSON(),
-                        name: map[item.id]
-                    }
+                        name: map[item.id],
+                    };
                 });
                 total = count;
             } else {
@@ -62,8 +62,8 @@ router.get("/", async function (req, res) {
                 total = 0;
             }
         } else {
-            const {count, rows} = await Course.findAndCountAll(condition);
-            list = rows.map(item => item.toJSON());
+            const { count, rows } = await Course.findAndCountAll(condition);
+            list = rows.map((item) => item.toJSON());
             total = count;
         }
 
@@ -81,9 +81,9 @@ router.get("/", async function (req, res) {
             list = list.map((item) => {
                 return {
                     ...item,
-                    isLike: courseIds.includes(item.id)
-                }
-            })
+                    isLike: courseIds.includes(item.id),
+                };
+            });
         }
         const data = {
             list: list,
@@ -91,7 +91,7 @@ router.get("/", async function (req, res) {
             currentPage,
             pageSize,
         };
-        success(res, "搜索课程成功。", data);
+        success(res, '搜索课程成功。', data);
     } catch (error) {
         failure(req, res, error);
     }
