@@ -6,7 +6,7 @@ module.exports = {
     // await queryInterface.addColumn('Orders', 'membershipMonths', {
     //   allowNull: false,
     //   defaultValue: 1,
-    //   type: Sequelize.Sequelize.INTEGER.UNSIGNED
+    //   type: Sequelize.INTEGER.UNSIGNED
     // });
   },
 

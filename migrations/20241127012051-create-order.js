@@ -42,7 +42,12 @@ module.exports = {
       membershipMonths: {
         allowNull: false,
         defaultValue: 1,
-        type: Sequelize.Sequelize.INTEGER.UNSIGNED
+        type: Sequelize.INTEGER.UNSIGNED
+      },
+      version: {
+        allowNull: false,
+        defaultValue: 0,
+        type: Sequelize.INTEGER.UNSIGNED,
       },
       createdAt: {
         allowNull: false,

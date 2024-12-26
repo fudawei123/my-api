@@ -6,7 +6,7 @@ module.exports = {
         await queryInterface.addColumn('Orders', 'version', {
             allowNull: false,
             defaultValue: 0,
-            type: Sequelize.Sequelize.INTEGER.UNSIGNED,
+            type: Sequelize.INTEGER.UNSIGNED,
         });
     },
 

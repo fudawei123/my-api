@@ -72,31 +72,24 @@ router.get('/:id', async function (req, res) {
  * POST /admin/chapters
  */
 router.post('/', async function (req, res) {
-    // 首先, 我们从你的连接开始一个事务并将其保存到一个变量中
-    const t = await sequelize.transaction();
-
     try {
-        const body = filterBody(req);
+        const chapter = await sequelize.transaction(async (t) => {
+            const body = filterBody(req);
 
-        // 创建章节，并增加课程章节数
-        const chapter = await Chapter.create(body, { transaction: t });
-        await Course.increment('chaptersCount', {
-            where: { id: chapter.courseId },
-            transaction: t,
+            // 创建章节，并增加课程章节数
+            const chapter = await Chapter.create(body, { transaction: t });
+            await Course.increment('chaptersCount', {
+                where: { id: chapter.courseId },
+                transaction: t,
+            });
+
+            return chapter;
         });
-
-        // 如果执行到此行,且没有引发任何错误.
-        // 我们提交事务.
-        await t.commit();
 
         await clearCache(chapter);
 
         success(res, '创建章节成功。', { chapter }, 201);
     } catch (error) {
-        // 如果执行到达此行,则抛出错误.
-        // 我们回滚事务.
-        await t.rollback();
-
         failure(req, res, error);
     }
 });
@@ -106,31 +99,24 @@ router.post('/', async function (req, res) {
  * POST /admin/chapters/:id
  */
 router.delete('/:id', async function (req, res) {
-    // 首先, 我们从你的连接开始一个事务并将其保存到一个变量中
-    const t = await sequelize.transaction();
-
     try {
-        const chapter = await getChapter(req);
+        const chapter = await sequelize.transaction(async (t) => {
+            const chapter = await getChapter(req);
 
-        // 删除章节，并减少课程章节数
-        await chapter.destroy({ transaction: t });
-        await Course.decrement('chaptersCount', {
-            where: { id: chapter.courseId },
-            transaction: t,
+            // 删除章节，并减少课程章节数
+            await chapter.destroy({ transaction: t });
+            await Course.decrement('chaptersCount', {
+                where: { id: chapter.courseId },
+                transaction: t,
+            });
+
+            return chapter;
         });
-
-        // 如果执行到此行,且没有引发任何错误.
-        // 我们提交事务.
-        await t.commit();
 
         await clearCache(chapter);
 
         success(res, '删除章节成功。');
     } catch (error) {
-        // 如果执行到达此行,则抛出错误.
-        // 我们回滚事务.
-        await t.rollback();
-
         failure(req, res, error);
     }
 });
