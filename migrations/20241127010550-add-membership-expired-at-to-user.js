@@ -1,18 +1,17 @@
-"use strict";
+'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
-    // await queryInterface.addColumn("Users", "membershipExpiredAt", {
-    //   type: Sequelize.DATE,
-    // });
+    async up(queryInterface, Sequelize) {
+        // await queryInterface.addColumn("Users", "membershipExpiredAt", {
+        //   type: Sequelize.DATE,
+        // });
+        // await queryInterface.addIndex("Users", {
+        //   fields: ["membershipExpiredAt"],
+        // });
+    },
 
-    // await queryInterface.addIndex("Users", {
-    //   fields: ["membershipExpiredAt"],
-    // });
-  },
-
-  async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn("Users", "membershipExpiredAt");
-  },
+    async down(queryInterface, Sequelize) {
+        await queryInterface.removeColumn('Users', 'membershipExpiredAt');
+    },
 };

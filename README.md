@@ -12,7 +12,7 @@
 
 ## 生成秘钥
 
-在命令行中运行 
+在命令行中运行
 
 ```shell
 node
@@ -41,10 +41,10 @@ docker-compose up -d
 
 ```json
 {
-  "development": {
-    "username": "您的数据库用户名",
-    "password": "您的数据库密码"
-  }
+    "development": {
+        "username": "您的数据库用户名",
+        "password": "您的数据库密码"
+    }
 }
 ```
 
