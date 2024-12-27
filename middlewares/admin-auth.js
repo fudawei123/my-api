@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { Unauthorized } = require('http-errors');
-const { success, failure } = require('../utils/responses');
+const { failure } = require('../utils/responses');
 
 module.exports = async (req, res, next) => {
     try {

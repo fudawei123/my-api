@@ -8,7 +8,7 @@ const { setKey, getKey } = require('../../utils/redis');
  * 查询分类列表
  * GET /categories
  */
-router.get('/', async function (req, res, next) {
+router.get('/', async function (req, res) {
     try {
         let categories = await getKey('categories');
         if (!categories) {

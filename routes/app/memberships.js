@@ -8,7 +8,7 @@ const { setKey, getKey } = require('../../utils/redis');
  * 查询大会员列表
  * GET /memberships
  */
-router.get('/', async function (req, res, next) {
+router.get('/', async function (req, res) {
     try {
         let memberships = await getKey('memberships');
         if (!memberships) {

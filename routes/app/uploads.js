@@ -31,6 +31,7 @@ router.post('/aliyun', function (req, res) {
             }
 
             const { id, ...file } = req.file;
+            console.log(id);
             const metadata = await getImageMetaData(file.url);
             success(res, '上传成功。', {
                 ...file,
@@ -48,7 +49,7 @@ router.post('/aliyun', function (req, res) {
  * 获取直传阿里云 OSS 授权信息
  * GET /uploads/aliyun_direct
  */
-router.get('/aliyun_direct', async function (req, res, next) {
+router.get('/aliyun_direct', async function (req, res) {
     // 有效期
     const date = moment().add(1, 'days');
 
@@ -151,7 +152,7 @@ router.post('/chunk', function (req, res) {
  */
 // 合并切片
 function pipeStream(path, writeStream) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const readStream = fse.createReadStream(path);
         readStream.on('end', () => {
             fse.removeSync(path); // 被读取完的切片移除掉

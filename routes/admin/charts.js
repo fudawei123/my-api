@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
+
 const { sequelize, User } = require('../../models');
-const { Op } = require('sequelize');
 const { success, failure } = require('../../utils/responses');
-const { NotFound } = require('http-errors');
 
 /**
  * 统计用户性别
@@ -63,7 +62,7 @@ router.get('/user', async (req, res) => {
         // });
 
         success(res, '查询每月用户数量成功。', { data });
-    } catch (err) {
+    } catch (error) {
         failure(req, res, error);
     }
 });

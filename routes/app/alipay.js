@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { NotFound, BadRequest, Conflict } = require('http-errors');
+const { NotFound, BadRequest } = require('http-errors');
 const moment = require('moment');
 
 const { User, Order, sequelize } = require('../../models');
@@ -13,7 +13,7 @@ const userAuth = require('../../middlewares/user-auth');
  * POST /alipay/pay/page    电脑页面
  * POST /alipay/pay/wap     手机页面
  */
-router.post('/pay/:platform', userAuth(), async function (req, res, next) {
+router.post('/pay/:platform', userAuth(), async function (req, res) {
     try {
         // 判断是电脑页面，还是手机页面
         const isPC = req.params.platform === 'page';
@@ -126,75 +126,71 @@ router.post('/query', userAuth, async function (req, res) {
  * @returns {Promise<void>}
  */
 async function paidSuccess(outTradeNo, tradeNo, paidAt) {
-    try {
-        await sequelize.transaction(async (t) => {
-            // 查询当前订单（在事务中）
-            const order = await Order.findOne({
-                where: { outTradeNo: outTradeNo },
-                transaction: t,
-            });
-
-            // 对于状态已更新的订单，直接返回。防止用户重复请求，重复增加大会员有效期
-            if (order.status > 0) {
-                return;
-            }
-
-            // 更新订单状态（在事务中）
-            await order.update(
-                {
-                    tradeNo: tradeNo, // 流水号
-                    status: 1, // 订单状态：已支付
-                    paymentMethod: 0, // 支付方式：支付宝
-                    paidAt: paidAt, // 支付时间
-                },
-                { transaction: t }
-            );
-            // 手动实现乐观锁
-            // 更新订单状态（在事务中），包括版本号检查
-            // updatedRows 是数据库中受到影响的行数
-            // const [updatedRows] = await Order.update(
-            //     {
-            //         tradeNo: tradeNo, // 流水号
-            //         status: 1, // 订单状态：已支付
-            //         paymentMethod: 0, // 支付方式：支付宝
-            //         paidAt: paidAt, // 支付时间
-            //         version: order.version + 1, // 增加版本号
-            //     },
-            //     {
-            //         where: {
-            //             id: order.id,
-            //             version: order.version, // 只更新版本号匹配的记录
-            //         },
-            //         transaction: t,
-            //     }
-            // );
-            // 如果没有更新数据，提示错误
-            // if (updatedRows === 0) {
-            //     throw new Conflict('请求冲突，您提交的数据已被修改，请稍后重试。');
-            // }
-
-            // 查询订单对应的用户（在事务中）
-            const user = await User.findByPk(order.userId, { transaction: t });
-
-            // 将用户组设置为大会员。可防止管理员创建订单，并将用户组修改为大会员
-            if (user.role === 0) {
-                user.role = 1;
-            }
-
-            // 使用moment.js，增加大会员有效期
-            user.membershipExpiredAt = moment(
-                user.membershipExpiredAt || new Date()
-            )
-                .add(order.membershipMonths, 'months')
-                .toDate();
-            // user.membershipExpiredAt = "2025年10月10日";
-
-            // 保存用户信息（在事务中）
-            await user.save({ transaction: t });
+    await sequelize.transaction(async (t) => {
+        // 查询当前订单（在事务中）
+        const order = await Order.findOne({
+            where: { outTradeNo: outTradeNo },
+            transaction: t,
         });
-    } catch (error) {
-        throw error;
-    }
+
+        // 对于状态已更新的订单，直接返回。防止用户重复请求，重复增加大会员有效期
+        if (order.status > 0) {
+            return;
+        }
+
+        // 更新订单状态（在事务中）
+        await order.update(
+            {
+                tradeNo: tradeNo, // 流水号
+                status: 1, // 订单状态：已支付
+                paymentMethod: 0, // 支付方式：支付宝
+                paidAt: paidAt, // 支付时间
+            },
+            { transaction: t }
+        );
+        // 手动实现乐观锁
+        // 更新订单状态（在事务中），包括版本号检查
+        // updatedRows 是数据库中受到影响的行数
+        // const [updatedRows] = await Order.update(
+        //     {
+        //         tradeNo: tradeNo, // 流水号
+        //         status: 1, // 订单状态：已支付
+        //         paymentMethod: 0, // 支付方式：支付宝
+        //         paidAt: paidAt, // 支付时间
+        //         version: order.version + 1, // 增加版本号
+        //     },
+        //     {
+        //         where: {
+        //             id: order.id,
+        //             version: order.version, // 只更新版本号匹配的记录
+        //         },
+        //         transaction: t,
+        //     }
+        // );
+        // 如果没有更新数据，提示错误
+        // if (updatedRows === 0) {
+        //     throw new Conflict('请求冲突，您提交的数据已被修改，请稍后重试。');
+        // }
+
+        // 查询订单对应的用户（在事务中）
+        const user = await User.findByPk(order.userId, { transaction: t });
+
+        // 将用户组设置为大会员。可防止管理员创建订单，并将用户组修改为大会员
+        if (user.role === 0) {
+            user.role = 1;
+        }
+
+        // 使用moment.js，增加大会员有效期
+        user.membershipExpiredAt = moment(
+            user.membershipExpiredAt || new Date()
+        )
+            .add(order.membershipMonths, 'months')
+            .toDate();
+        // user.membershipExpiredAt = "2025年10月10日";
+
+        // 保存用户信息（在事务中）
+        await user.save({ transaction: t });
+    });
 }
 
 /**

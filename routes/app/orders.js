@@ -66,7 +66,7 @@ router.get('/:outTradeNo', async function (req, res) {
  * 创建订单
  * POST /orders
  */
-router.post('/', async function (req, res, next) {
+router.post('/', async function (req, res) {
     try {
         const outTradeNo = uuidv4().replace(/-/g, '');
         const membership = await getMembership(req);

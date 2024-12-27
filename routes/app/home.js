@@ -8,7 +8,7 @@ const { setKey, getKey } = require('../../utils/redis');
  * 查询首页数据
  * GET /
  */
-router.get('/', async function (req, res, next) {
+router.get('/', async function (req, res) {
     try {
         // 如果有缓存，直接返回缓存数据
         let data = await getKey('index');

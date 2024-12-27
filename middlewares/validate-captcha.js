@@ -1,6 +1,6 @@
 const { BadRequest } = require('http-errors');
 const { failure } = require('../utils/responses');
-const { getKey, delKey } = require('../utils/redis');
+const { getKey } = require('../utils/redis');
 
 module.exports = async (req, res, next) => {
     try {

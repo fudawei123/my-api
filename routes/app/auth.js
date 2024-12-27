@@ -8,7 +8,6 @@ const { User, LoginRecord } = require('../../models');
 const { success, failure } = require('../../utils/responses');
 const validateCaptcha = require('../../middlewares/validate-captcha');
 const { delKey } = require('../../utils/redis');
-const sendMail = require('../../utils/mail');
 const { emailMQ } = require('../../utils/rabbit-mq');
 
 /**
