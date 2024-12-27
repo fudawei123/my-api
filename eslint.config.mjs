@@ -14,6 +14,6 @@ export default [
             'prettier/prettier': 'error', // 将 prettier 规则设置为错误级别
         },
     },
-    { languageOptions: { globals: { ...globals.node } } },
+    { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
     pluginJs.configs.recommended,
 ];
