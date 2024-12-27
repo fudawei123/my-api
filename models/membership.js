@@ -4,7 +4,7 @@ const moment = require('moment');
 
 module.exports = (sequelize, DataTypes) => {
     class Membership extends Model {
-        static associate(models) {}
+        static associate() {}
     }
 
     Membership.init(

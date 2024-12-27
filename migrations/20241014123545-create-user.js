@@ -77,7 +77,7 @@ module.exports = {
             fields: ['membershipExpiredAt'],
         });
     },
-    async down(queryInterface, Sequelize) {
+    async down(queryInterface) {
         await queryInterface.dropTable('Users');
     },
 };

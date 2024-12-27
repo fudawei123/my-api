@@ -3,6 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(queryInterface, Sequelize) {
+        console.log(queryInterface, Sequelize);
         // await queryInterface.addColumn("Articles", "deletedAt", {
         //   type: Sequelize.DATE,
         // });
@@ -11,7 +12,7 @@ module.exports = {
         // });
     },
 
-    async down(queryInterface, Sequelize) {
+    async down(queryInterface) {
         await queryInterface.removeColumn('Articles', 'deletedAt');
     },
 };

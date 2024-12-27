@@ -70,7 +70,7 @@ module.exports = {
             fields: ['userId'], // 普通索引
         });
     },
-    async down(queryInterface, Sequelize) {
+    async down(queryInterface) {
         await queryInterface.dropTable('Orders');
     },
 };

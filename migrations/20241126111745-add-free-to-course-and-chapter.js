@@ -3,6 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(queryInterface, Sequelize) {
+        console.log(queryInterface, Sequelize);
         // await queryInterface.addColumn("Courses", "free", {
         //   allowNull: false,
         //   defaultValue: true,
@@ -18,7 +19,7 @@ module.exports = {
         // });
     },
 
-    async down(queryInterface, Sequelize) {
+    async down(queryInterface) {
         await queryInterface.removeColumn('Courses', 'free');
         await queryInterface.removeColumn('Chapters', 'free');
     },
