@@ -120,6 +120,26 @@ router.put('/:id', async function (req, res) {
     }
 });
 
+// 待测试
+router.post('/createOrUpdate', async function (req, res) {
+    try {
+        const id = req.body.id;
+        const body = filterBody(req);
+
+        let article;
+        if (id) {
+            article = await getArticle(req);
+            await article.update(body);
+        } else {
+            article = await Article.create(body);
+        }
+
+        success(res, `${id ? '更新' : '创建'}文章成功。`, { article });
+    } catch (error) {
+        failure(req, res, error);
+    }
+});
+
 /**
  * 删除到回收站
  * POST /admin/articles/delete
