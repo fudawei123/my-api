@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+    </head>
+
+    <body>
+        <input type="file" onchange="handleFileSelect(event)" />
+        <button onclick="handleUpload(event)">导入</button>
+        <button onclick="handleDownload(event)">导出</button>
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+        <script>
+            let file;
+            function handleUpload() {
+                let formdata = new FormData();
+                formdata.append('file', file);
+                axios
+                    .post('http://localhost:3001/excel/upload', formdata, {
+                        'Content-type': 'multipart/form-data',
+                    })
+                    .then(function (response) {
+                        console.log(response);
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            }
+
+            function handleFileSelect(event) {
+                file = event.target.files[0];
+            }
+
+            function handleDownload(event) {
+                axios({
+                    method: 'get',
+                    url: 'http://localhost:3001/excel/download1',
+                    responseType: 'blob',
+                })
+                    .then((res) => {
+                        const { data, headers } = res;
+                        const fileName =
+                            headers['content-disposition'].split(
+                                'filename='
+                            )[1];
+                        this.downLoadFile(data, fileName, () => {});
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                    });
+            }
+
+            function downLoadFile(fileData, fileName, callBack) {
+                let blob = new Blob([fileData], {
+                    // type: 'applicationnd.ms-excel',
+                });
+                const link = document.createElement('a');
+                link.style.display = 'none';
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute('download', fileName);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                callBack(true);
+            }
+        </script>
+    </body>
+</html>

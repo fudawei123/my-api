@@ -60,6 +60,10 @@ function failure(req, res, error) {
         message: `请求失败: ${error.name}`,
         errors: Array.isArray(errors) ? errors : [errors],
     });
+    // res.write(); // 不会处理数据 可以写多次 不会结束请求需要搭配end 支持参数类型：Buffer | String
+    // res.end(); // 不会处理数据 只能写一次 可以结束请求 Buffer | String
+    // res.send(); // 会处理数据添加对应content-type 只能写一次 可以结束请求 支持参数类型：Buffer | String | Object | Array
+    // res.json(); // 会处理数据 添加application/json content-type 只能写一次 可以结束请求 支持参数类型：任何json类型
 
     logger(req, error, statusCode, errors);
 }
