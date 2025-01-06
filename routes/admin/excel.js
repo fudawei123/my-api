@@ -17,6 +17,10 @@ router.get('/download1', (req, res) => {
 
     // 组装数据
 
+    res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
     res.setHeader('Content-Disposition', 'attachment; filename=test.xlsx');
 
     res.send(xlsx.build(excelData));
@@ -52,10 +56,10 @@ router.get('/download2', (req, res) => {
     };
 
     // 设置响应头
-    // res.setHeader(
-    //   'Content-Type',
-    //   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    // );
+    res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
     res.setHeader('Content-Disposition', 'attachment; filename=test.xlsx');
 
     // xlsx.build方法第二个参数接收的是单元格的配置参数
