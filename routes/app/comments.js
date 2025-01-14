@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Op } = require('sequelize');
+const { Op, QueryTypes } = require('sequelize');
 
 const { Comment, sequelize } = require('../../models');
 const { success, failure } = require('../../utils/responses');
@@ -29,14 +29,20 @@ router.get('/', async function (req, res) {
         const cacheKey = `comments:${courseId}:${currentPage}:${pageSize}`;
         let data = await getKey(cacheKey);
         if (!data) {
-            const [results] = await sequelize.query(`
-            SELECT c1.textType as textType, c1.address as address, c1.createdAt as createdAt, c1.id, c1.text, c1.parentId, c1.replyId, u1.id as userId, u1.username as username, u1.avatar as avatar, u2.avatar as replyAvatar, u2.id as replyUserId, u2.username as replyUsername
-            FROM (SELECT * FROM Comments WHERE courseId = ${courseId}) c1
-            LEFT JOIN Comments c2 ON c1.replyId = c2.id
-            LEFT JOIN Users u1 ON c1.userId = u1.id
-            LEFT JOIN Users u2 ON c2.userId = u2.id
-            ORDER BY c1.createdAt ASC
-        `);
+            const [results] = await sequelize.query(
+                `
+                    SELECT c1.textType as textType, c1.address as address, c1.createdAt as createdAt, c1.id, c1.text, c1.parentId, c1.replyId, u1.id as userId, u1.username as username, u1.avatar as avatar, u2.avatar as replyAvatar, u2.id as replyUserId, u2.username as replyUsername
+                    FROM (SELECT * FROM Comments WHERE courseId = :courseId) c1
+                    LEFT JOIN Comments c2 ON c1.replyId = c2.id
+                    LEFT JOIN Users u1 ON c1.userId = u1.id
+                    LEFT JOIN Users u2 ON c2.userId = u2.id
+                    ORDER BY c1.createdAt ASC
+                `,
+                {
+                    replacements: { courseId },
+                    type: QueryTypes.SELECT,
+                }
+            );
 
             const parent = [];
             const children = {};
