@@ -3,7 +3,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-require('./server');
+require('./grpc/server');
 require('dotenv').config();
 
 const { emailMQ, logMQ } = require('./utils/rabbit-mq');

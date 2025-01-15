@@ -49,60 +49,66 @@ router.post('/sign_up', validateCaptcha, async function (req, res) {
     }
 });
 
+const handleSignIn = async (body) => {
+    const { login, password } = body;
+
+    if (!login) {
+        throw new BadRequest('邮箱/用户名必须填写。');
+    }
+
+    if (!password) {
+        throw new BadRequest('密码必须填写。');
+    }
+
+    const condition = {
+        where: {
+            [Op.or]: [{ email: login }, { username: login }],
+        },
+    };
+
+    // 通过email或username，查询用户是否存在
+    const user = await User.findOne(condition);
+    if (!user) {
+        throw new NotFound('用户不存在，无法登录。');
+    }
+
+    // 验证密码
+    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    if (!isPasswordValid) {
+        throw new Unauthorized('密码错误。');
+    }
+
+    // 生成身份验证令牌
+    const token = jwt.sign(
+        {
+            userId: user.id,
+        },
+        process.env.SECRET,
+        { expiresIn: '30d' }
+    );
+
+    return token;
+
+    // const loginRecord = await LoginRecord.findOne({
+    //     where: { userId: user.id },
+    // });
+    // if (loginRecord) {
+    //     await loginRecord.update({ token: token });
+    // } else {
+    //     await LoginRecord.create({
+    //         userId: user.id,
+    //         token: token,
+    //     });
+    // }
+};
+
 /**
  * 用户登录
  * POST /auth/sign_in
  */
 router.post('/sign_in', async (req, res) => {
     try {
-        const { login, password } = req.body;
-
-        if (!login) {
-            throw new BadRequest('邮箱/用户名必须填写。');
-        }
-
-        if (!password) {
-            throw new BadRequest('密码必须填写。');
-        }
-
-        const condition = {
-            where: {
-                [Op.or]: [{ email: login }, { username: login }],
-            },
-        };
-
-        // 通过email或username，查询用户是否存在
-        const user = await User.findOne(condition);
-        if (!user) {
-            throw new NotFound('用户不存在，无法登录。');
-        }
-
-        // 验证密码
-        const isPasswordValid = bcrypt.compareSync(password, user.password);
-        if (!isPasswordValid) {
-            throw new Unauthorized('密码错误。');
-        }
-
-        // 生成身份验证令牌
-        const token = jwt.sign(
-            {
-                userId: user.id,
-            },
-            process.env.SECRET,
-            { expiresIn: '30d' }
-        );
-
-        const loginRecord = await LoginRecord.findOne({
-            where: { userId: user.id },
-        });
-        if (loginRecord) {
-            await loginRecord.update({ token: token });
-        } else {
-            await LoginRecord.create({
-                userId: user.id,
-                token: token,
-            });
-        }
+        const token = await handleSignIn(req.body);
 
         success(res, '登录成功。', { token });
     } catch (error) {
@@ -110,4 +116,20 @@ router.post('/sign_in', async (req, res) => {
     }
 });
 
-module.exports = router;
+module.exports = {
+    router,
+    grpc: {
+        handleSignIn: async (call, callback) => {
+            try {
+                const token = await handleSignIn(call.request);
+                callback(null, { code: 200, message: '', token });
+            } catch (error) {
+                callback(null, {
+                    code: 500,
+                    message: error.message,
+                    token: '',
+                });
+            }
+        },
+    },
+};
