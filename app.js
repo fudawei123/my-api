@@ -10,6 +10,9 @@ const { emailMQ, logMQ } = require('./utils/rabbit-mq');
 emailMQ.consumer();
 logMQ.consumer();
 
+const syncReadCountJob = require('./utils/syncReadCount');
+syncReadCountJob.start();
+
 const appRouter = require('./routes');
 
 var app = express();
