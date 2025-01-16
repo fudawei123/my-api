@@ -5,6 +5,7 @@ const { Op } = require('sequelize');
 const { success, failure } = require('../../utils/responses');
 const { NotFound } = require('http-errors');
 const { getKeysByPattern, delKey } = require('../../utils/redis');
+const articleService = require('../../service/Article.service');
 
 /**
  * 查询文章列表
@@ -38,14 +39,13 @@ router.get('/', async function (req, res) {
             };
         }
 
-        const { count, rows } = await Article.findAndCountAll(condition);
+        const { count, rows } = await articleService.findAndCountAll(condition);
+
         success(res, '查询文章列表成功。', {
-            articles: rows,
-            pagination: {
-                total: count,
-                currentPage,
-                pageSize,
-            },
+            list: rows,
+            total: count,
+            currentPage,
+            pageSize,
         });
     } catch (error) {
         failure(req, res, error);
@@ -58,8 +58,9 @@ router.get('/', async function (req, res) {
  */
 router.get('/:id', async function (req, res) {
     try {
-        const article = await getArticle(req);
-        success(res, '查询文章成功。', { article });
+        const article = await articleService.findByPk(req.params.id);
+
+        success(res, '查询文章成功。', article);
     } catch (error) {
         failure(req, res, error);
     }
@@ -73,11 +74,11 @@ router.post('/', async function (req, res) {
     try {
         const body = filterBody(req);
 
-        const article = await Article.create(body);
+        const article = await articleService.create(body);
 
         await clearCache();
 
-        success(res, '创建文章成功。', { article }, 201);
+        success(res, '创建文章成功。', article, 201);
     } catch (error) {
         failure(req, res, error);
     }
@@ -89,11 +90,11 @@ router.post('/', async function (req, res) {
  */
 router.delete('/:id', async function (req, res) {
     try {
-        const article = await getArticle(req);
+        const { id } = req.params;
 
-        await article.destroy();
+        await articleService.destroy(id);
 
-        await clearCache(req.params.id);
+        await clearCache(id);
 
         success(res, '删除文章成功。');
     } catch (error) {
@@ -107,14 +108,14 @@ router.delete('/:id', async function (req, res) {
  */
 router.put('/:id', async function (req, res) {
     try {
-        const article = await getArticle(req);
+        const { id } = req.params;
         const body = filterBody(req);
 
-        await article.update(body);
+        await articleService.update(id, body);
 
-        await clearCache(article.id);
+        await clearCache(id);
 
-        success(res, '更新文章成功。', { article });
+        success(res, '更新文章成功。');
     } catch (error) {
         failure(req, res, error);
     }
