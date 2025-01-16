@@ -3,7 +3,7 @@ const protoLoader = require('@grpc/proto-loader');
 
 const { grpc: authGrpc } = require('../routes/app/auth');
 
-const packageDefinition = protoLoader.loadSync(__dirname + '/grpc/auth.proto', {
+const packageDefinition = protoLoader.loadSync(__dirname + '/auth.proto', {
     keepCase: true,
     longs: String,
     enums: String,

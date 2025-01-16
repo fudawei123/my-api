@@ -1,14 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { NotFound, BadRequest, Unauthorized } = require('http-errors');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { Op } = require('sequelize');
-const { User, LoginRecord } = require('../../models');
+const { User } = require('../../models');
 const { success, failure } = require('../../utils/responses');
 const validateCaptcha = require('../../middlewares/validate-captcha');
 const { delKey } = require('../../utils/redis');
 const { emailMQ } = require('../../utils/rabbit-mq');
+const authService = require('../../service/Auth.service');
 
 /**
  * 用户注册
@@ -36,9 +33,9 @@ router.post('/sign_up', validateCaptcha, async function (req, res) {
             to: user.email,
             subject: '注册成功通知',
             html: `
-        您好，<span style="color: red">${user.nickname}</span>。<br><br>
-        恭喜，您已成功注册会员！
-      `,
+                您好，<span style="color: red">${user.nickname}</span>。<br><br>
+                恭喜，您已成功注册会员！
+            `,
         };
 
         emailMQ.producer(msg);
@@ -49,68 +46,15 @@ router.post('/sign_up', validateCaptcha, async function (req, res) {
     }
 });
 
-const handleSignIn = async (body) => {
-    const { login, password } = body;
-
-    if (!login) {
-        throw new BadRequest('邮箱/用户名必须填写。');
-    }
-
-    if (!password) {
-        throw new BadRequest('密码必须填写。');
-    }
-
-    const condition = {
-        where: {
-            [Op.or]: [{ email: login }, { username: login }],
-        },
-    };
-
-    // 通过email或username，查询用户是否存在
-    const user = await User.findOne(condition);
-    if (!user) {
-        throw new NotFound('用户不存在，无法登录。');
-    }
-
-    // 验证密码
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
-    if (!isPasswordValid) {
-        throw new Unauthorized('密码错误。');
-    }
-
-    // 生成身份验证令牌
-    const token = jwt.sign(
-        {
-            userId: user.id,
-        },
-        process.env.SECRET,
-        { expiresIn: '30d' }
-    );
-
-    return token;
-
-    // const loginRecord = await LoginRecord.findOne({
-    //     where: { userId: user.id },
-    // });
-    // if (loginRecord) {
-    //     await loginRecord.update({ token: token });
-    // } else {
-    //     await LoginRecord.create({
-    //         userId: user.id,
-    //         token: token,
-    //     });
-    // }
-};
-
 /**
  * 用户登录
  * POST /auth/sign_in
  */
 router.post('/sign_in', async (req, res) => {
     try {
-        const token = await handleSignIn(req.body);
+        const token = await authService.signIn(req.body);
 
-        success(res, '登录成功。', { token });
+        success(res, '登录成功。', token);
     } catch (error) {
         failure(req, res, error);
     }
@@ -119,9 +63,11 @@ router.post('/sign_in', async (req, res) => {
 module.exports = {
     router,
     grpc: {
-        handleSignIn: async (call, callback) => {
+        signIn: async (call, callback) => {
             try {
-                const token = await handleSignIn(call.request);
+                console.log('call.request:', call.request);
+                const token = await authService.signIn(call.request);
+                console.log('token:', token);
                 callback(null, { code: 200, message: '', token });
             } catch (error) {
                 callback(null, {

@@ -2,9 +2,11 @@ const { NotFound } = require('http-errors');
 
 class BaseService {
     Model;
+
     constructor(Model) {
         this.Model = Model;
     }
+
     async findAndCountAll(condition) {
         const { count, rows } = await this.Model.findAndCountAll(condition);
         return {
@@ -12,6 +14,11 @@ class BaseService {
             count,
         };
     }
+
+    async findOne(condition) {
+        return await this.Model.findOne(condition);
+    }
+
     async findByPk(id) {
         const entity = await this.Model.findByPk(id);
         if (!entity) {
@@ -19,13 +26,16 @@ class BaseService {
         }
         return entity;
     }
+
     async create(dto) {
         return await this.Model.create(dto);
     }
+
     async destroy(id) {
         const entity = await this.findByPk(id);
         await entity.destroy();
     }
+
     async update(id, dto) {
         const entity = await this.findByPk(id);
         await entity.update(dto);
