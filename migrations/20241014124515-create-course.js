@@ -45,6 +45,11 @@ module.exports = {
                 defaultValue: 0,
                 type: Sequelize.INTEGER.UNSIGNED,
             },
+            readCount: {
+                allowNull: false,
+                defaultValue: 0,
+                type: Sequelize.INTEGER.UNSIGNED,
+            },
             chaptersCount: {
                 allowNull: false,
                 defaultValue: 0,

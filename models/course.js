@@ -99,6 +99,7 @@ module.exports = (sequelize, DataTypes) => {
             },
             content: DataTypes.TEXT,
             likesCount: DataTypes.INTEGER,
+            readCount: DataTypes.INTEGER,
             chaptersCount: DataTypes.INTEGER,
             free: {
                 type: DataTypes.BOOLEAN,
