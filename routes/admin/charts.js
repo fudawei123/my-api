@@ -3,6 +3,10 @@ const router = express.Router();
 
 const { sequelize, User } = require('../../models');
 const { success, failure } = require('../../utils/responses');
+const { Worker } = require('worker_threads');
+
+// 创建一个新的Worker Thread
+const worker = new Worker('./worker.js');
 
 /**
  * 统计用户性别
@@ -42,11 +46,12 @@ router.get('/user', async (req, res) => {
             months: [],
             values: [],
         };
-
         results.forEach((item) => {
             data.months.push(item.month);
             data.values.push(item.value);
         });
+
+        success(res, '查询每月用户数量成功。', { data });
 
         // const results = await User.findAll({
         //   attributes: [
@@ -60,11 +65,40 @@ router.get('/user', async (req, res) => {
         //   order: [["month", "ASC"]], // 按年月排序,
         //   raw: true,
         // });
-
-        success(res, '查询每月用户数量成功。', { data });
     } catch (error) {
         failure(req, res, error);
     }
+});
+
+// const sleep = (milliseconds) => {
+//     const start = Date.now();
+//     while (Date.now() - start < milliseconds) {
+//         // 什么也不做，只是等待
+//     }
+// };
+router.get('test_block', (res) => {
+    // sleep(10000);
+    // res.send('done');
+
+    // 向Worker Thread发送消息
+    worker.postMessage(10000);
+
+    // 接收来自Worker Thread的消息
+    worker.on('message', (message) => {
+        res.send(message);
+    });
+
+    // 监听Worker Thread的错误事件
+    worker.on('error', (error) => {
+        console.error(`Worker error: ${error}`);
+    });
+
+    // 监听Worker Thread的退出事件
+    worker.on('exit', (code) => {
+        if (code !== 0) {
+            console.error(`Worker stopped with exit code ${code}`);
+        }
+    });
 });
 
 module.exports = router;
