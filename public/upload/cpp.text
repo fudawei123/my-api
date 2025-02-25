@@ -1,2 +1,47 @@
 https://zhuanlan.zhihu.com/p/688090551
 
+
+#include <iostream>
+using namespace std;
+
+typedef void(*F)(void);
+
+class Base {
+
+public:
+	int num = 10;
+
+	virtual void f() { cout << "Base::f" << endl; }
+
+	virtual void g() { cout << "Base::g" << endl; }
+
+	virtual void h() { cout << "Base::h" << endl; }
+
+};
+
+int main()
+{
+	Base b;
+    // 虚表指针
+    long *vptr = (long*)(&b);
+    // 解引用，获取虚表的地址
+    long vtable_addr = *vptr;
+    // 指向第一个虚函数地址
+    long *virtual_func_ptr = (long*)(vtable_addr);
+    // 解引用，获取函数的地址
+    F f = (F)(*(virtual_func_ptr + 0));
+    f();
+
+    int *p = (int*)(vptr + 1);
+    cout << *p << endl;
+
+	// int arr[] = {1,2,3};
+	// int *p1 = arr;
+	// int (*p2)[3] = &arr;
+	// cout << (long long)(p1) <<endl;
+	// cout << (long long)(p1 + 1) <<endl;
+	// cout << (long long)(p2) <<endl;
+	// cout << (long long)(p2 + 1) <<endl;
+	// cout << ((int*)p2)[2] << endl;
+
+}
