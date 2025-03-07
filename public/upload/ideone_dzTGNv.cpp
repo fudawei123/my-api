@@ -10,7 +10,7 @@ public:
 	A(int x = 0): m_x(x){cout << "A(" << x << ") " << this << endl;}
 	~A(){cout << "~A() " << this << endl;}
 	A(const A &a): m_x(a.m_x){cout << "A(const A &a) " << this << " " << &a << endl;}
-	A(const A &&a){cout << "A(const A &&a)" << endl;}
+	A(const A &&a){cout << "A(const A &&a) " << this << " " << &a << endl;}
 	A& operator=(const A &a){cout << "A& operator=(const A &a) " << this << " " << &a << endl;return *this;}
 	A& operator=(const A &&a){cout << "A& operator=(const A &&a) " << this << " " << &a << endl;return *this;}
 };
@@ -64,12 +64,9 @@ public:
 			T *temp = (T*)(operator new (n * sizeof(T)));
 			size_t oldn = size();
 			for(size_t i=0;i<oldn;i++){
-				new (temp+i) T(_start[i]); 
+				new (temp+i) T(_start[i]);
+				_start[i].~T();
 			}
-			// T *temp = new T[n];
-			// for(size_t i=0;i<oldn;i++){
-			// 	temp[i] = _start[i]; 
-			// }
 			operator delete (_start);
 			_start = temp;
 			_finish = _start + oldn;
@@ -80,16 +77,18 @@ public:
 		assert(pos >= _start && pos <= _finish);
 		if(_finish == _end){
 			size_t n = pos - _start;
-			reverse(capacity() == 0 ? 4 : capacity() * 2);
+			reverse(capacity() == 0 ? 2 : capacity() * 2);
 			pos = _start + n;
 		}
 		iterator cur = _finish;
 		while(cur > pos){
-			*cur = *(cur-1);
+			*cur = std::move(*(cur-1));
 			cur--;
 		}
+		if(pos != _finish){
+			pos->~T();
+		}
 		new (pos) T(val); 
-		// *pos = val;
 		_finish++;
 		return pos;
 	}
@@ -98,9 +97,10 @@ public:
 	}
 	iterator erase(iterator pos){
 		assert(pos >= _start && pos <= _finish);
+		pos->~T();
 		iterator cur = pos;
 		while(cur != _finish-1){
-			*cur = *(cur+1);
+			*cur = std::move(*(cur+1));
 			cur++;
 		}
 		_finish--;
@@ -134,26 +134,19 @@ void print(vector<A> &v){
 }
 int main() {
 	vector<A> v1;
-	vector<A> v2;
 	A a1(1);
 	A a2(2);
 	A a3(3);
 	A a4(4);
 	cout << "--------------" << endl;
 	v1.push_back(a1);
-	v2.push_back(a2);
-	v2.push_back(a3);
+	v1.push_back(a2);
 	cout << "--------------" << endl;
-	v1.swap(v2);
-	print(v1);
-	print(v2);
+	v1.push_back(a3);
 	cout << "--------------" << endl;
-	vector<A> v3(v1);
-	print(v3);
+	v1.insert(v1.begin()+1, a4);
 	cout << "--------------" << endl;
-	vector<A> v4(v3.begin(), v3.end());
-	v4.push_back(a4);
-	print(v4);
+	v1.erase(v1.begin()+1);
 	cout << "--------------" << endl;
 	return 0;
 }
