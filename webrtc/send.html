@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="upgrade-insecure-requests"
+        />
+        <title>Send</title>
+    </head>
+
+    <body>
+        <button type="button" onclick="shareLive('Camera')">ShareCamera</button>
+        <button type="button" onclick="shareLive('Screen')">ShareScreen</button>
+    </body>
+    <script>
+        const socket = new WebSocket('ws://localhost:8099');
+        socket.onopen = function () {
+            console.log('取得与信令服务器的联系，网页可正常运行');
+        };
+        let peer = new RTCPeerConnection();
+
+        async function sendMedia(stream) {
+            stream.getTracks().forEach((track) => {
+                peer.addTrack(track, stream);
+            });
+
+            let offer = await peer.createOffer();
+            await peer.setLocalDescription(offer);
+
+            console.log('send offer');
+            socket.send(JSON.stringify(offer));
+        }
+
+        async function shareLive(media) {
+            let stream;
+            switch (media) {
+                case 'Camera':
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                    });
+                    break;
+
+                case 'Screen':
+                    stream = await navigator.mediaDevices.getDisplayMedia();
+                    break;
+
+                default:
+                    break;
+            }
+            sendMedia(stream);
+        }
+
+        peer.onicecandidate = function (e) {
+            if (e.candidate) {
+                socket.send(
+                    JSON.stringify({
+                        type: 'offer_ice',
+                        iceCandidate: e.candidate,
+                    })
+                );
+            }
+        };
+
+        // 如果接收到对方的视频
+        socket.onmessage = function (e) {
+            const { type, sdp, iceCandidate } = JSON.parse(e.data);
+            switch (type) {
+                case 'answer':
+                    console.log('accept answer');
+                    peer.setRemoteDescription(
+                        new RTCSessionDescription({ type, sdp })
+                    );
+                    break;
+
+                case 'answer_ice':
+                    console.log('accept answer_ice');
+                    peer.addIceCandidate(iceCandidate);
+                    break;
+
+                default:
+                    break;
+            }
+        };
+    </script>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="upgrade-insecure-requests"
+        />
+        <title>Receiver</title>
+    </head>
+
+    <body>
+        <video autoplay id="remote"></video>
+    </body>
+    <script>
+        const remoteVideo = document.querySelector('#remote');
+
+        const socket = new WebSocket('ws://localhost:8099');
+        socket.onopen = function () {
+            console.log('取得与信令服务器的联系，网页可正常运行');
+        };
+        let buddy = new RTCPeerConnection();
+
+        // 如果接收到对方的视频
+        socket.onmessage = async (e) => {
+            const { type, sdp, iceCandidate } = JSON.parse(e.data);
+            switch (type) {
+                case 'offer':
+                    console.log('accept offer');
+                    buddy.setRemoteDescription(
+                        new RTCSessionDescription({ type, sdp })
+                    );
+                    let answer = await buddy.createAnswer();
+                    buddy.setLocalDescription(answer);
+                    console.log('send answer');
+                    socket.send(JSON.stringify(answer));
+                    break;
+
+                case 'offer_ice':
+                    console.log('accept offer_ice');
+                    buddy.addIceCandidate(iceCandidate);
+                    break;
+
+                default:
+                    break;
+            }
+        };
+
+        buddy.ontrack = function (e) {
+            remote.srcObject = e.streams[0];
+        };
+
+        buddy.onicecandidate = function (e) {
+            if (e.candidate) {
+                socket.send(
+                    JSON.stringify({
+                        type: 'answer_ice',
+                        iceCandidate: e.candidate,
+                    })
+                );
+            }
+        };
+    </script>
+</html>
