@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>IoT Camera Viewer</title>
+    </head>
+    <body>
+        <h1>IoT Camera Viewer</h1>
+        <video id="remoteVideo" autoplay playsinline></video>
+
+        <script>
+            const remoteVideo = document.getElementById('remoteVideo');
+            const socket = new WebSocket('ws://localhost:8080');
+            let peerConnection;
+
+            socket.onopen = () => {
+                console.log('Connected to signaling server');
+                createPeerConnection();
+            };
+
+            socket.onmessage = (message) => {
+                const signalData = JSON.parse(message.data);
+                handleSignalData(signalData);
+            };
+
+            function createPeerConnection() {
+                peerConnection = new RTCPeerConnection();
+
+                peerConnection.onicecandidate = ({ candidate }) => {
+                    if (candidate) {
+                        socket.send(JSON.stringify({ candidate }));
+                    }
+                };
+
+                peerConnection.ontrack = (event) => {
+                    // 设置视频源
+                    remoteVideo.srcObject = event.streams[0];
+                };
+
+                // 创建 offer 并发送给摄像头设备
+                peerConnection
+                    .createOffer()
+                    .then((offer) => {
+                        return peerConnection.setLocalDescription(offer);
+                    })
+                    .then(() => {
+                        socket.send(
+                            JSON.stringify({
+                                offer: peerConnection.localDescription,
+                            })
+                        );
+                    });
+            }
+
+            function handleSignalData(signalData) {
+                if (signalData.answer) {
+                    peerConnection.setRemoteDescription(
+                        new RTCSessionDescription(signalData.answer)
+                    );
+                } else if (signalData.candidate) {
+                    peerConnection.addIceCandidate(
+                        new RTCIceCandidate(signalData.candidate)
+                    );
+                }
+            }
+        </script>
+    </body>
+</html>
