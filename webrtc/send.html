@@ -55,6 +55,7 @@
 
         peer.onicecandidate = function (e) {
             if (e.candidate) {
+                console.log('send offer_ice');
                 socket.send(
                     JSON.stringify({
                         type: 'offer_ice',

@@ -54,6 +54,7 @@
 
         buddy.onicecandidate = function (e) {
             if (e.candidate) {
+                console.log('send answer_ice');
                 socket.send(
                     JSON.stringify({
                         type: 'answer_ice',
