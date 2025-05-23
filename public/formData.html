@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    </head>
+
+    <body>
+        <input type="file" />
+        <script>
+            function uploadWithFormData(url, file, formFields) {
+                // 生成随机boundary分隔符
+                const boundary =
+                    '----WebKitFormBoundary' +
+                    Math.random().toString(16).substr(2, 16);
+
+                // 构建请求头
+                const headers = {
+                    'Content-Type': `multipart/form-data; boundary=${boundary}`,
+                };
+
+                // 构建报文主体
+                let body = '';
+
+                // 添加表单字段
+                for (const [name, value] of Object.entries(formFields)) {
+                    body +=
+                        `--${boundary}\r\n` +
+                        `Content-Disposition: form-data; name="${name}"\r\n\r\n` +
+                        `${value}\r\n`;
+                }
+
+                // 添加文件字段
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        body +=
+                            `--${boundary}\r\n` +
+                            `Content-Disposition: form-data; name="file"; ` +
+                            `filename="${file.name}"\r\n` +
+                            `Content-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`;
+
+                        // 拼接二进制数据需要特殊处理
+                        const bodyBeforeFile = new TextEncoder().encode(body);
+                        const bodyAfterFile = new TextEncoder().encode(
+                            `\r\n--${boundary}--\r\n`
+                        );
+
+                        const fullBody = new Blob([
+                            bodyBeforeFile,
+                            e.target.result,
+                            bodyAfterFile,
+                        ]);
+
+                        // const formData = new FormData();
+                        // formData.append('description', '测试文件上传');
+                        // formData.append('file', file);
+
+                        axios
+                            .post('http://localhost:3001/upload', fullBody, {
+                                headers,
+                            })
+                            .then(resolve)
+                            .catch(reject);
+                    };
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+
+            // 使用示例
+            const fileInput = document.querySelector('input[type="file"]');
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                const response = await uploadWithFormData(
+                    'http://localhost:3001/upload',
+                    file,
+                    { description: '测试文件上传' }
+                );
+                console.log('上传结果:', response);
+            });
+        </script>
+    </body>
+</html>
