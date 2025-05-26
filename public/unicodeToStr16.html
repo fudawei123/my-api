@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+    </head>
+    <body>
+        <script>
+            // 爱
+            // U+7231
+            // 0111 0010 0011 0001
+            // 0111 001000 110001 + 1110xxxx 10xxxxxx 10xxxxxx
+            // 11100111 10001000 10110001
+            // E7 88 B1
+            // 231 136 177
+
+            // const str = '付';
+            // const encoder = new TextEncoder();
+            // const uint8Array = encoder.encode(str);
+            // console.log(uint8Array);
+
+            // 付 4ED8
+            // parseInt('4', 16).toString(2)
+            // 0100 1110 1101 1000
+            // 0100 111011 011000 + 1110xxxx 10xxxxxx 10xxxxxx
+            // 11100100 10111011 10011000
+            // parseInt('11100100', 2).toString(16).toUpperCase();
+            // E4 BB 98
+
+            function get16(unicode) {
+                const arr1 = unicode.split('');
+                let str1 = '';
+                for (let i = 0; i < arr1.length; i++) {
+                    str1 += String(parseInt(arr1[i], 16).toString(2)).padStart(
+                        4,
+                        '0'
+                    );
+                }
+                const arr2 = str1.split('');
+                const subArr1 = arr2.slice(0, 4);
+                const subArr2 = arr2.slice(4, 10);
+                const subArr3 = arr2.slice(10);
+                const subStr1 = '1110' + subArr1.join('');
+                const subStr2 = '10' + subArr2.join('');
+                const subStr3 = '10' + subArr3.join('');
+                const str16 =
+                    parseInt(subStr1, 2).toString(16).toUpperCase() +
+                    parseInt(subStr2, 2).toString(16).toUpperCase() +
+                    parseInt(subStr3, 2).toString(16).toUpperCase();
+                const str10 =
+                    parseInt(subStr1, 2).toString(10) +
+                    parseInt(subStr2, 2).toString(10) +
+                    parseInt(subStr3, 2).toString(10);
+                console.log(str16);
+                console.log(str10);
+            }
+        </script>
+    </body>
+</html>
