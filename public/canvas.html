@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <style>
+            * {
+                padding: 0;
+                margin: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas" width="525" height="438"></canvas>
+        <script>
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            let sun;
+            let earth;
+            let moon;
+            init();
+            function init() {
+                sun = new Image();
+                earth = new Image();
+                moon = new Image();
+                sun.onload = function () {
+                    draw();
+                };
+                sun.src = './sun.png';
+                earth.src = './earth.png';
+                moon.src = './moon.png';
+            }
+            function draw() {
+                ctx.clearRect(0, 0, 525, 438);
+                ctx.drawImage(sun, 0, 0, 525, 438);
+                ctx.save();
+
+                ctx.translate(262.5, 219);
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(255,255,0,0.5)';
+                ctx.arc(0, 0, 200, 0, Math.PI * 2, false);
+                ctx.stroke();
+
+                let time = new Date();
+                ctx.rotate(
+                    ((2 * Math.PI) / 60) * time.getSeconds() +
+                        ((2 * Math.PI) / 60000) * time.getMilliseconds()
+                );
+                ctx.translate(200, 0);
+                ctx.drawImage(earth, -41.5, -46);
+
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(255,255,255,.3)';
+                ctx.arc(0, 0, 60, 0, 2 * Math.PI);
+                ctx.stroke();
+
+                ctx.rotate(
+                    ((2 * Math.PI) / 6) * time.getSeconds() +
+                        ((2 * Math.PI) / 6000) * time.getMilliseconds()
+                );
+                ctx.translate(60, 0);
+                ctx.drawImage(moon, -22.5, -19.5);
+                ctx.restore();
+
+                requestAnimationFrame(draw);
+            }
+        </script>
+    </body>
+</html>

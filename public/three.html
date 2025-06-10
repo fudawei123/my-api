@@ -1,0 +1,235 @@
+<html>
+    <head>
+        <title>Cube</title>
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+            }
+
+            canvas {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 引入three.js -->
+        <script src="https://cdn.bootcss.com/three.js/r83/three.min.js"></script>
+        <!-- 引入 dat.gui -->
+        <script src="https://cdn.bootcss.com/dat-gui/0.7.1/dat.gui.min.js"></script>
+        <!-- 引入stats.js  -->
+        <script src="https://cdn.jsdelivr.net/npm/stats.js@latest/build/stats.min.js"></script>
+        <script type="module">
+            import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/controls/OrbitControls.js';
+
+            // 1、创建场景
+            var scene = new THREE.Scene();
+
+            // 2、创建相机（透视投影相机）
+            var camera = new THREE.PerspectiveCamera(
+                50, // 相机视野
+                window.innerWidth / window.innerHeight, // 水平方向和竖直方向长度的比值
+                0.1, // 近端渲染距离
+                1000 // 远端渲染距离
+            );
+            // 2.1 设置相机位置
+            // camera.position.x = 5;
+            // camera.position.y = 10;
+            // camera.position.z = 10;
+            // 2.1 设置相机位置简写方式：
+            camera.position.set(5, 10, 10);
+
+            // 3、创建渲染器
+            var renderer = new THREE.WebGLRenderer();
+            // 3.1 设置渲染器的大小（长宽）（设置渲染器为全屏）
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            // 3.2 将渲染结果展示到页面上
+            document.body.appendChild(renderer.domElement);
+            // 还有3.3步骤（今后会把3.3步骤放到后面去），结合场景和相机进行渲染，即用摄像机拍下此刻的场景
+            // renderer.render(scene, camera);
+            // 10.1 定义对象，设置需要修改的数据
+            var controls = {
+                positionX: 0,
+                positionY: 0,
+                positionZ: 0,
+            };
+
+            // 实例化相机插件对象
+            var control = new OrbitControls(camera, renderer.domElement);
+
+            // 4、创建几何体模型（立方几何体）
+            var geometry = new THREE.BoxGeometry(4, 4, 4);
+
+            // 5、创建材质（基础网格材质和法线网格材质）
+            // 5.1 创建基础网格材质
+            var materialBasic = new THREE.MeshBasicMaterial({
+                color: 0xffffff, // 白色
+                wireframe: true, //是否将几何体渲染为线框，默认值为false（即渲染为平面多边形）
+            });
+            // 5.2 创建法线网格材质
+            var materialNormal = new THREE.MeshNormalMaterial();
+
+            // 6、创建多种网格（因为有多个材质）
+            // 第一个参数是几何模型，第二参数是材质
+            var cube = THREE.SceneUtils.createMultiMaterialObject(geometry, [
+                materialBasic,
+                materialNormal,
+            ]);
+            // 6.1 让相机 看向（对着）物体（拍摄对象）的位置（默认状态下，相机将指向三维坐标系的原点。）
+            camera.lookAt(cube.position);
+            // 6.2、将网格添加到场景中
+            scene.add(cube);
+
+            // 调用drawCanvas函数传入一个特定的对象（对象中的属性要符合封装函数的需求）
+            var canvas = drawCanvas({
+                text: '立方体',
+                width: 256,
+                height: 64,
+            });
+            // 创建一个纹理贴图，将其应用到一个表面
+            var spriteMapCube = new THREE.Texture(canvas);
+            spriteMapCube.wrapS = THREE.RepeatWrapping;
+            spriteMapCube.wrapT = THREE.RepeatWrapping;
+            // wrapS定义了纹理贴图在水平方向上将如何包裹
+            // wrapT定义了纹理贴图在垂直方向上将如何包裹
+            // RepeatWrapping 一种包裹模式，纹理将简单地重复到无穷大。
+            // 如果编码类型在纹理已被一个材质使用之后发生了改变， 你需要来设置Material.needsUpdate为true来使得材质重新编译。
+            spriteMapCube.needsUpdate = true;
+            // 创建精灵材质
+            var spriteMaterial = new THREE.SpriteMaterial({
+                map: spriteMapCube, // 将纹理贴在精灵的材质表面
+                color: 0xffffff, // 白色
+            });
+            // 实例化精灵对象
+            var spriteCube = new THREE.Sprite(spriteMaterial);
+            //设置精灵对象位置
+            spriteCube.position.set(30, 10, -5);
+            //设置精灵对象缩放大小
+            spriteCube.scale.set(20, 5, 1);
+            // 将设置好的精灵对象，添加到场景中
+            scene.add(spriteCube);
+            // // 通过TextureLoader将图片转为base64格式（为了减小图片的体积）
+            // var spriteMap = new THREE.TextureLoader().load(
+            //     drawCanvas({
+            //         text: '文本内容',
+            //         width: 64,
+            //         height: 64,
+            //     }).toDataURL()
+            // );
+            // // 创建精灵材质
+            // var spriteMaterial = new THREE.SpriteMaterial({
+            //     map: spriteMap,
+            //     color: 0xffffff,
+            // });
+            // // 实例化精灵对象
+            // var sprite = new THREE.Sprite(spriteMaterial);
+            // //设置精灵对象的位置
+            // sprite.position.set(4, 4, 0); //设置位置
+            // //设置精灵对象的缩放大小
+            // sprite.scale.set(1, 1, 1); //设置scale进行大小设置
+            // // 在场景中添加精灵
+            // scene.add(sprite);
+            // // 11 创建精灵材质
+            // var spriteMaterialNormal = new THREE.SpriteMaterial({
+            //     color: 0x00ffff,
+            // });
+            // // 11.1 实例化精灵对象
+            // var spriteNormal = new THREE.Sprite(spriteMaterialNormal);
+            // //11.2 设置精灵对象的位置
+            // spriteNormal.position.set(4, 4, 0);
+            // //11.3 设置精灵对象的缩放大小
+            // spriteNormal.scale.set(1, 1, 1);
+            // // 11.4 在场景中添加精灵
+            // scene.add(spriteNormal);
+
+            // 7、创建光源
+            var spotLight = new THREE.SpotLight(0xffffff);
+            // 7.1 设置光源位置
+            spotLight.position.set(0, 20, 20);
+            // 7.2 设置光源照射的强度，默认值为 1
+            spotLight.intensity = 5;
+            // 7.3 将光源添加到场景中
+            scene.add(spotLight);
+            // 8、为了方便观察3D图像，添加三维坐标系对象
+            var axes = new THREE.AxisHelper(6);
+            scene.add(axes);
+            // 11、实例化性能监视插件
+            var stats = new Stats();
+            // 11.1 把stats对象生成的dom，添加到页面中（这样就能在页面中看到性能监视器了）
+            document.body.appendChild(stats.dom);
+            // 9、创建动画循环渲染函数
+            function animate() {
+                // 9.1 循环调用函数
+                requestAnimationFrame(animate);
+                // 每一次animate函数调用，都让网格比上一次 X 轴、Y 轴各旋转增加 0.01 弧度
+                // cube.rotation.x += 0.01;
+                // cube.rotation.y += 0.01;
+                // 11.2 更新性能插件
+                stats.update();
+
+                // cube.position.x = 3; //将模型的位置调整到x正轴距离原点为3的位置。
+                // cube.position.y += 5; //将模型的y轴位置以当前的位置向上移动5个单位。
+                // cube.position.z -= 6; //将模型的Z轴位置以当前的位置向后移动5个单位。
+                // cube.position.set(2, 5, -6);
+                // 更新相机插件
+                control.update();
+
+                // 3.3 结合场景和相机进行渲染，即用摄像机拍下此刻的场景
+                renderer.render(scene, camera);
+            }
+            // 调用动画函数
+            animate();
+
+            // 10.2 实例化dat.GUI对象
+            var gui = new dat.GUI();
+            // 10.3 把需要修改的配置添加dat.GUI对象中
+            gui.add(controls, 'positionX', -10, 10).onChange(updatePosition);
+            gui.add(controls, 'positionY', -10, 10).onChange(updatePosition);
+            gui.add(controls, 'positionZ', -1, 1).onChange(updatePosition);
+            // 10.4 定义更新模型位置函数
+            function updatePosition() {
+                cube.position.set(
+                    controls.positionX,
+                    controls.positionY,
+                    controls.positionZ
+                );
+            }
+
+            //创建canvas对象（封装Canvas画布）
+            function drawCanvas(options) {
+                // 创建Canvas画布
+                var canvas = document.createElement('canvas');
+                // 设置Canvas画布的宽度和高度
+                canvas.width = options.width;
+                canvas.height = options.height;
+                // 设置 在Canvas画布上的绘图环境为2D绘图
+                var ctx = canvas.getContext('2d');
+                // 设置 绘图环境的背景颜色填充颜色为黑色
+                ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+                // 绘制“被填充”的矩形（绘制矩形，该矩形的填充颜色为黑色）
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // ctx.fillRect(x,y,width,height);
+                // 参数    描述
+                // x      矩形左上角的 x 坐标
+                // y      矩形左上角的 y 坐标
+                // width  矩形的宽度， 以像素计
+                // height 矩形的高度， 以像素计
+                // 设置绘图环境的字体大小和字体（Verdana 为无衬线字体）
+                ctx.font = '60px Verdana';
+                // 设置绘图中物体的颜色为白色（在此处设置的是文本的颜色）
+                ctx.fillStyle = '#fff';
+                // 在画布上绘制填色的文本
+                ctx.fillText(options.text, 0, 56, options.width);
+                // ctx.fillText(text,x,y,maxWidth);
+                // 参数	      描述
+                // text      规定在画布上输出的文本。
+                // x         开始绘制文本的 x 坐标位置（ 相对于画布）。
+                // y         开始绘制文本的 y 坐标位置（ 相对于画布）。
+                // maxWidth  可选。 允许的最大文本宽度， 以像素计。
+                return canvas; // 返回画布给封装好的drawCanvas函数
+            }
+        </script>
+    </body>
+</html>
