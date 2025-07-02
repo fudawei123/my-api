@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>index3</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+    #detail {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      color: white;
+    }
+    #select {
+      position: absolute;
+      right: 0;
+      top: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <select id="select">
+    <option value="" checked>==请选择==</option>
+  </select>
+  <div id="scene"></div>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://d3js.org/d3-geo.v3.min.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "../three.js-r148/build/three.module.js",
+      "three/addons/": "../three.js-r148/examples/jsm/"
+    }
+  }
+</script>
+  <script type="module" src="./index10.js"></script>
+</body>
+
+</html>
