@@ -139,10 +139,12 @@ fetch('./临时数据表.geojson').then(response => response.json()).then(data =
       mesh.name = name
       mesh.gid = gid
       mesh.isWater = isWater
-      const center = getCenter(mesh)
-      const tag = renderHTML(name)
-      tag.position.copy(center)
-      mesh.add(tag)
+      if('1' != blank){
+        const center = getCenter(mesh)
+        const tag = renderHTML(name)
+        tag.position.copy(center)
+        mesh.add(tag)
+      }
       meshArr.push(mesh)
       if('1' === isWater){
         select.innerHTML += `<option value="${gid}">${name}</option>`
@@ -279,6 +281,7 @@ renderer.domElement.addEventListener('click', function (event) {
     const object = intersects[0].object;
     if('1' === object.isWater){
       selectObject(object)
+      select.value = object.gid
     }
   } else {
     outlinePass.selectedObjects = [];
@@ -293,6 +296,9 @@ function handleChange(e){
     camera.position.set(0, 0, 200);
     camera.lookAt(0, 0, 0);
     controls.target.set(0, 0, 0);
+    outlinePass.selectedObjects = [];
+    delDetail()
+    delPoint(selected)
     return
   }
   for (let i = 0; i < meshArr.length; i++) {
