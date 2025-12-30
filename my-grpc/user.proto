@@ -1,0 +1,21 @@
+syntax = "proto3"; // 声明 proto3 语法
+
+// 定义包名，避免命名冲突
+package user;
+
+// 1. 定义请求消息：传入 userid
+message UserRequest {
+  string userid = 1; // 字段编号 1，类型 string
+}
+
+// 2. 定义响应消息：返回 username（可选增加是否成功的状态）
+message UserResponse {
+  string username = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+// 3. 定义用户服务：包含通过 userid 查询 username 的 RPC 方法
+service UserService {
+  rpc GetUsernameByUserid (UserRequest) returns (UserResponse);
+}
