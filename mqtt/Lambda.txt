@@ -1,0 +1,119 @@
+第 3 天必学：Lambda（AWS 无服务器计算核心）
+✅ 为什么必学：
+考题占比高，是无服务器架构的核心，助理级认证必考；
+贴合你的 Node.js 开发，无需搭建 / 运维服务器，写代码即可运行，学习成本低；
+后续可和 S3 联动（比如 S3 上传文件后自动触发 Lambda 处理），是 Web 开发的常用场景。
+
+一、 通俗讲概念：Lambda 到底是啥？能干啥？
+本质：无服务器（Serverless）函数计算服务，你只需要写业务代码（支持 Node.js/Python 等），不用关心服务器的创建、部署、运维、扩容，AWS 会帮你搞定所有底层资源。
+通俗类比：
+传统 EC2（后续会学）：相当于你租了一间办公室，要自己装修、买设备、维护，不管用不用，都要付房租；
+Lambda：相当于你找了一个 “临时工”，只需要告诉它做什么（写代码），做完就走，只付 “干活的时间” 费用，没事干的时候不花钱。
+核心特点（通俗理解）：
+无需运维服务器：不用管底层服务器，专注写业务逻辑；
+按使用计费：只按函数「执行时长」和「调用次数」收费，Free Tier 每月 100 万次调用 + 40 万 GB - 秒执行时长，完全免费；
+自动扩容：请求多了自动增加执行实例，请求少了自动缩减，不用手动配置。
+贴合你的 Web 开发用途：
+处理 S3 上传后的文件（比如压缩图片、提取文件内容）；
+搭建无服务器 API 接口（配合后续学的 API Gateway）；
+定时执行任务（比如定时备份数据库）。
+
+二、 必考核心考点（考试直接考，背会 + 理解）
+核心特性（3 个高频考点）：
+无服务器（Serverless）：无需管理底层服务器，是 Lambda 的核心标识，考题中出现 “无需运维服务器”“按需执行” 优先选 Lambda；
+事件驱动：Lambda 函数不会主动运行，需要被「事件」触发，常见触发源：S3 文件上传 / 删除、API Gateway 请求、CloudWatch 定时任务等（备考必记）；
+计费方式：按「执行时长（毫秒级）」和「内存配置」计费，空闲时无费用，Free Tier 覆盖学习需求。
+关键概念（2 个必考）：
+运行时（Runtime）：Lambda 支持的编程语言环境，比如 Node.js 18.x、Python 3.11 等，我们学习选择你熟悉的 Node.js 18.x；
+角色（Role）：和之前学的 IAM Role 联动，Lambda 需要 IAM Role 来获取访问其他 AWS 服务的权限（比如 Lambda 要读取 S3，需要给 Role 绑定 S3 只读权限），不能给 Lambda 配置 IAM User 密钥（考点，安全最佳实践）。
+实操相关考点（和 S3 联动）：
+Lambda 触发源配置：可配置 S3 作为触发源，当 S3 有文件上传 / 删除时，自动触发 Lambda 函数执行；
+最小权限原则：给 Lambda 的 IAM Role 仅授予所需权限（比如只给 S3 只读权限），不授予多余权限。
+
+三、 实操步骤（用 Free Tier，零成本练手，贴合你的 Node.js 开发栈）
+你的目标：1. 创建 1 个 Node.js Lambda 函数 2. 配置 IAM Role 给 Lambda 授予 S3 只读权限 3. 测试函数运行，读取你之前创建的 S3 Bucket 中的 index.html 文件信息
+步骤 1：进入 Lambda 控制台，创建第一个 Lambda 函数
+登录 AWS 控制台，顶部搜索框搜「Lambda」，进入 Lambda 控制台；
+点击「创建函数」，选择「从头开始创建」（默认选项），按要求填写：
+函数名称：填一个有意义的名字（比如nodejs-read-s3-file）；
+运行时：选择「Node.js 18.x」（你熟悉的环境，兼容你的代码）；
+执行角色：选择「创建新角色，使用基本 Lambda 权限」（AWS 会自动创建一个基础 IAM Role，后续我们修改它的权限）；
+拉到最底部，点击「创建函数」，等待 1-2 分钟，函数创建成功，进入 Lambda 函数编辑页面。
+步骤 2：修改 Lambda 的 IAM Role，授予 S3 只读权限（核心，贴合最小权限原则）
+在 Lambda 函数编辑页面，配置->权限->执行角色，点击角色名称（比如nodejs-read-s3-file-role-xxxx），会自动跳转到 IAM 控制台的该角色详情页；
+点击「权限」标签页，点击「添加权限」→ 「附加直接策略」；
+搜索「AmazonS3ReadOnlyAccess」（AWS 官方预制策略，只读 S3，符合最小权限原则），勾选该策略，点击「添加权限」；
+此时，Lambda 函数已具备读取所有 S3 Bucket 的权限，后续代码中可正常访问 S3。
+步骤 3：编写 Node.js 代码，读取 S3 Bucket 中的 index.html 文件信息
+回到 Lambda 函数编辑页面，找到「代码」标签页，默认有一段示例代码，替换为以下代码（贴合你的开发栈，功能：读取 S3 Bucket 中的 index.html 文件元数据）：
+import { S3Client, HeadObjectCommand } from '@aws-sdk/client-s3';
+
+const s3 = new S3Client();
+
+export const handler = async(event) => {
+       // 配置参数：替换为你的S3 Bucket名称和文件Key
+       const params = {
+        Bucket: 'fdw-s3-demo-bucket', // 你的S3 Bucket名称
+        Key: 'index.html' // 要读取的文件Key
+    };
+    
+    try {
+        // 读取S3文件元数据
+        const fileMetadata = await s3.send(new HeadObjectCommand(params));
+        
+        // 构造返回结果
+        const response = {
+            statusCode: 200,
+            body: JSON.stringify({
+                message: '读取S3文件元数据成功',
+                bucketName: params.Bucket,
+                fileName: params.Key,
+                contentType: fileMetadata.ContentType,
+                fileSize: fileMetadata.ContentLength + ' bytes'
+            })
+        };
+        
+        return response;
+    } catch (error) {
+        // 异常处理
+        const errorResponse = {
+            statusCode: 500,
+            body: JSON.stringify({
+                message: '读取S3文件失败',
+                error: error.message
+            })
+        };
+        
+        return errorResponse;
+    }
+};
+点击代码编辑框上方的「保存」，保存修改后的代码。
+步骤 4：测试 Lambda 函数，验证运行结果
+点击 Lambda 控制台页面上方的「测试」按钮，首次测试需要创建测试事件：
+事件名称：填任意名称（比如test-read-s3）；
+事件模板：选择「Hello World」（默认即可，我们的函数暂时不依赖事件数据）；
+点击「创建」，创建测试事件；
+再次点击「测试」，Lambda 会开始执行函数，等待 1-2 秒，页面会显示「执行结果：成功」；
+下滑查看「返回结果」，会显示 index.html 的元数据（Content-Type: text/html、文件大小等），说明：
+Lambda 函数运行正常；
+IAM Role 权限生效，成功读取 S3 文件；
+Node.js 代码逻辑无误。
+步骤 5：核心验证（可选，贴合后续联动场景）
+若执行结果显示 “成功”，说明你已完成 Lambda 的核心实操；若出现报错，优先排查：
+S3 Bucket 名称是否填写正确；
+Lambda 的 IAM Role 是否已附加AmazonS3ReadOnlyAccess策略；
+网络是否正常（Lambda 默认可访问 S3，无需额外配置 VPC）。
+
+四、 真题小测（今天学完就能做，检验成果）
+（助理级必考题型，无服务器架构核心）题干：你是 Web 开发者，需要实现一个功能：当用户向 S3 Bucket 上传一张头像图片后，自动压缩图片并保存到另一个 S3 Bucket，要求低成本、无需运维服务器、自动触发执行，以下哪个方案最合理？A. 创建 EC2 实例，部署 Node.js 服务，定时轮询 S3 Bucket，发现新图片后进行压缩B. 创建 Lambda 函数，配置 S3 上传事件作为触发源，在函数中实现图片压缩逻辑，授予 Lambda S3 读写权限C. 使用 RDS 数据库，记录上传图片的信息，通过后端接口触发图片压缩任务D. 创建 CloudFront 分发，配置缓存规则，自动压缩上传的图片
+✅ 正确答案：B✅ 解析：
+A：需要运维 EC2 实例，定时轮询效率低，且空闲时仍需付费，不符合 “低成本”“无需运维” 要求；
+B：Lambda 无服务器（无需运维、低成本），事件驱动（S3 上传自动触发），可直接在函数中实现压缩逻辑，授予对应 S3 权限即可，完全符合需求；
+C：RDS 是关系型数据库，无法实现自动触发和图片压缩，逻辑复杂且效率低；
+D：CloudFront 是 CDN 服务，用于加速内容分发，不具备图片压缩和事件触发的功能。
+
+今日作业（必须完成，巩固记忆）
+默写 Lambda 的 2 个核心特性：无服务器（无需运维）、事件驱动（需触发才能运行）；
+确认实操 4 个步骤全部完成：创建 Lambda 函数、配置 IAM Role 权限、编写 Node.js 代码、测试运行成功；
+记住 1 个核心考点：无服务器架构中，Lambda 是核心计算服务，按需执行、自动扩容、按使用计费；
+思考：为什么 Lambda 不能使用 IAM User 密钥，而必须使用 IAM Role？（答案：IAM Role 是临时权限，自动过期，无需在代码中硬编码密钥，更安全；IAM User 密钥是长期权限，硬编码易泄露，违背安全最佳实践）。

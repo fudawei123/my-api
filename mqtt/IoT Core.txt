@@ -1,0 +1,86 @@
+实操指南：本地两个 MQTT 服务通过 AWS IoT Core 实现交互
+核心目标：搭建两个本地 MQTT 客户端（一个发布消息、一个订阅消息），通过AWS IoT Core 作为中间 MQTT Broker，实现本地两个服务的跨网络交互（无需本地搭建 MQTT Broker，全程零成本，学习测试不收费）。
+
+一、前期准备
+本地环境：安装 Node.js（推荐 16.x 及以上，与 Lambda 运行时兼容），后续用mqtt.js库搭建本地 MQTT 客户端；
+AWS 账户：已完成实名认证（新账户即可，享受 IoT Core 免费额度）；
+核心工具：
+本地 MQTT 客户端库：mqtt（Node.js 第三方库，轻量易用）；
+AWS 服务：IoT Core（提供 MQTT Broker、设备认证、消息路由）。
+
+二、步骤 1：AWS IoT Core 基础配置（核心，实现本地客户端认证连接）
+AWS IoT Core 要求所有 MQTT 客户端必须通过证书认证才能连接，这一步是关键，按以下步骤操作：
+1.1 进入 AWS IoT Core 控制台并选择区域
+登录 AWS 控制台，顶部搜索框输入「IoT Core」，进入服务控制台；
+右上角选择区域（推荐eu-north-1或ap-northeast-1，与你之前的 Lambda/S3 区域一致，避免跨区域额外配置）。
+1.2 创建「Thing」（设备标识，用于本地客户端认证）
+在 IoT Core 控制台左侧菜单，选择「管理 → 事物 → 创建事物」；
+选择「创建单个事物」，点击「下一步」；
+填写事物名称（如local-mqtt-thing），其余保持默认，点击「下一步」；
+选择「自动生成证书」（无需手动创建，AWS 自动生成密钥对和证书），点击「下一步」；
+选择「创建策略」（后续绑定到证书，控制客户端权限），跳转到策略创建页面。
+1.3 创建 IoT Core 策略（授予 MQTT 连接 / 发布 / 订阅权限）
+策略名称：local-mqtt-policy；
+策略文档：选择「JSON」格式，替换为以下内容（授予所有 MQTT 主题的连接、发布、订阅权限，学习阶段简化配置，生产环境可精细化限制主题）：
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iot:Connect",
+        "iot:Publish",
+        "iot:Subscribe",
+        "iot:Receive"
+      ],
+      "Resource": [
+        "*"
+      ]
+    }
+  ]
+}
+点击「创建」，返回事物创建页面，勾选刚创建的local-mqtt-policy；
+点击「创建事物」，此时会自动生成 3 个核心文件（必须下载保存，仅显示一次，丢失无法找回）：
+设备证书（xxx-certificate.pem.crt）；
+私钥（xxx-private.pem.key）；
+根 CA 证书（选择「Amazon Root CA 1」，点击下载，文件名为AmazonRootCA1.pem）；
+下载完成后，将 3 个文件放在同一个本地文件夹（如./aws-iot-certs/），后续本地客户端会用到。
+1.4 获取 AWS IoT Core MQTT Broker 端点 
+MQTT 测试客户端->连接详细信息 
+在 IoT Core 控制台左侧菜单，选择「设置 → 设备数据端点」；
+复制「MQTT 消息代理」端点（格式：xxx-ats.iot.xxx.amazonaws.com），后续本地客户端连接需要用到该地址。
+
+三、步骤 2：AWS IoT Core 配置消息规则（核心：中转 MQTT 消息到 Lambda）
+这是实现「MQTT 消息触发 Lambda」的关键步骤，通过 IoT Core 的「消息规则」，持久化订阅local/msg/lambda主题，然后将消息转发给你已有的 Lambda 函数。
+2.1 前提准备
+确保你已拥有一个可用的 Lambda 函数（如之前创建的nodejs-read-s3-file）；
+确保你已在 AWS IoT Core 创建过Thing、证书、策略（策略需包含iot:CreateRule、iot:AttachAction权限，你之前创建的策略local-mqtt-policy已包含*资源，满足要求）；
+登录 AWS 控制台，进入 IoT Core 控制台（选定与之前一致的区域，如eu-north-1）。
+2.2 创建 IoT Core 消息规则
+左侧导航栏找到「Message routing」（中文：消息路由）→ 「Rules」（中文：规则），点击「Create rule」（中文：创建规则）；
+配置规则基本信息：
+Rule name（规则名称）：mqtt-to-lambda-rule（自定义，便于识别）；
+Description（描述）：将local/msg/lambda主题的MQTT消息转发给Lambda（可选）；
+其余保持默认，点击「Next」（下一步）；
+配置规则查询语句（SQL：筛选 MQTT 消息）：
+Rule query statement（规则查询语句）：选择「SQL」，输入以下内容：
+SELECT * FROM 'local/msg/lambda'
+说明：该语句表示「持久化订阅local/msg/lambda主题下的所有 MQTT 消息」，与你本地订阅端发布的主题一致；
+其余保持默认（无需开启高级选项），点击「Next」（下一步）；
+配置规则操作（Action：转发到 Lambda）：
+点击「Add action」（添加操作）；
+在操作类型中，选择「Invoke a Lambda function」（调用 Lambda 函数，中文界面对应「调用 Lambda 函数」）；
+配置 Lambda 函数：
+Region（区域）：选择你 Lambda 函数所在的区域（如eu-north-1，必须与 Lambda 区域一致）；
+Lambda function（Lambda 函数）：选择你已有的 Lambda 函数（如nodejs-read-s3-file）；
+点击「Confirm」（确认），再点击「Next」（下一步）；
+审核并创建规则：
+查看配置摘要，确认主题、Lambda 函数配置无误；
+点击「Create rule」（创建规则），此时规则会自动启用（状态为「Active」）。
+2.3 关键避坑点
+规则查询语句的主题必须用单引号'包裹，且与本地订阅端发布的主题local/msg/lambda完全一致（大小写敏感）；
+Lambda 函数的区域必须与 IoT Core 规则的区域一致，否则无法找到并调用 Lambda；
+规则创建后，状态默认是「Active」（启用），若后续无需测试，可手动暂停规则，避免误触发 Lambda。
+三、步骤 3：修改 Lambda 函数（极简逻辑：仅打印 MQTT 消息）
+无需复杂逻辑，只需修改 Lambda 的index.js文件，解析从 IoT Core 传入的 MQTT 消息，并打印到日志中即可，核心是解码 Base64 格式的消息体。
+
