@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC 发送方（摄像头端）</title>
+  <style>
+    * {
+      margin: 10px;
+      box-sizing: border-box;
+    }
+
+    video {
+      width: 480px;
+      height: 360px;
+      border: 2px solid #333;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    button:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+    }
+
+    .status {
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>WebRTC 发送方（摄像头采集端）</h2>
+  <button id="startBtn">开启摄像头并注册为发送方</button>
+  <p class="status" id="status">状态：未启动</p>
+  <div>
+    <p>本地摄像头流：</p>
+    <video id="localVideo" autoplay playsinline muted></video>
+  </div>
+  <div>
+    <p>当前接入接收方数量：<span id="clientCount">0</span></p>
+  </div>
+  <div>
+    <div>
+      <input type="text" id="messageInput" placeholder="输入消息">
+      <button id="sendBtn">发送消息</button>
+    </div>
+    <div>
+      <p>信息列表：</p>
+      <ul id="messageList"></ul>
+    </div>
+  </div>
+
+  <script>
+    // 全局变量
+    const startBtn = document.getElementById('startBtn');
+    const localVideo = document.getElementById('localVideo');
+    const statusText = document.getElementById('status');
+    const clientCount = document.getElementById('clientCount');
+    const messageList = document.getElementById('messageList');
+    const sendBtn = document.getElementById('sendBtn');
+    const messageInput = document.getElementById('messageInput');
+    let ws; // WebSocket信令连接
+    let localStream; // 摄像头采集的媒体流
+    let hostId; // 发送方自身ID（信令服务器分配）
+    // 存储所有接收方的P2P连接：key=接收方ID，value=RTCPeerConnection实例
+    const peerConnections = new Map();
+    const dataChannels = [];
+
+    // ICE服务器配置（使用谷歌、腾讯公共STUN，用于获取公网IP，测试用；生产需自建TURN）
+    const iceConfig = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun.qq.com:3478' }
+      ]
+    };
+
+    // 1. 初始化WebSocket连接（连接信令服务器）
+    function initWebSocket() {
+      ws = new WebSocket('ws://localhost:8080');
+
+      ws.onopen = () => {
+        statusText.textContent = '状态：信令服务器连接成功';
+        console.log('信令服务器连接成功');
+      };
+
+      ws.onmessage = (e) => {
+        const msg = JSON.parse(e.data);
+        handleSignalingMessage(msg);
+      };
+
+      ws.onclose = () => {
+        statusText.textContent = '状态：信令服务器连接关闭';
+        console.log('信令服务器连接关闭');
+        // 重置状态
+        peerConnections.clear();
+        clientCount.textContent = '0';
+        startBtn.disabled = false;
+      };
+
+      ws.onerror = (err) => {
+        statusText.textContent = '状态：信令服务器连接错误';
+        console.error('信令服务器错误：', err);
+      };
+    }
+
+    // 2. 处理信令服务器消息
+    function handleSignalingMessage(msg) {
+      console.log('收到信令消息：', msg);
+      switch (msg.type) {
+        // 注册为发送方成功
+        case 'host-registered':
+          hostId = msg.hostId;
+          statusText.textContent = `状态：已注册为发送方（ID：${hostId}），等待接收方接入`;
+          break;
+
+        // 有新接收方加入，需建立P2P连接
+        case 'new-client-join':
+          const newClientId = msg.clientId;
+          statusText.textContent = `状态：新接收方（ID：${newClientId}）接入，建立P2P连接`;
+          // 为该接收方创建P2P连接
+          createPeerConnection(newClientId);
+          // 向接收方发送Offer，发起连接
+          createAndSendOffer(newClientId);
+          // 更新接收方数量
+          clientCount.textContent = peerConnections.size;
+          break;
+
+        // 收到接收方回复的Answer，设置远端SDP
+        case 'answer':
+          const answerClientId = msg.senderId;
+          const pc = peerConnections.get(answerClientId);
+          if (pc) {
+            pc.setRemoteDescription(new RTCSessionDescription(msg.data))
+              .then(() => {
+                statusText.textContent = `状态：已接收接收方（ID：${answerClientId}）的Answer`;
+              })
+              .catch((err) => console.error('设置远端Answer失败：', err));
+          }
+          break;
+
+        // 收到接收方的ICE候选，添加到P2P连接
+        case 'ice-candidate':
+          const iceClientId = msg.senderId;
+          const icePc = peerConnections.get(iceClientId);
+          if (icePc && msg.data) {
+            icePc.addIceCandidate(new RTCIceCandidate(msg.data))
+              .catch((err) => console.error('添加ICE候选失败：', err));
+          }
+          break;
+
+        // 错误消息
+        case 'error':
+          alert(`错误：${msg.msg}`);
+          statusText.textContent = `状态：错误 - ${msg.msg}`;
+          break;
+      }
+    }
+
+    // 3. 开启摄像头，采集媒体流
+    async function startCamera() {
+      try {
+        // 采集摄像头视频+麦克风音频（如需仅视频，可设audio: false）
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 480, height: 360 },
+          audio: true
+        });
+        // 展示本地摄像头流
+        localVideo.srcObject = localStream;
+        statusText.textContent = '状态：摄像头开启成功，正在注册为发送方';
+        // 向信令服务器注册为发送方
+        ws.send(JSON.stringify({ type: 'register-host' }));
+      } catch (err) {
+        console.error('开启摄像头失败：', err);
+        alert('开启摄像头失败，请授予音视频权限，并确保摄像头可用');
+        statusText.textContent = '状态：摄像头开启失败';
+        startBtn.disabled = false;
+      }
+    }
+
+    // 4. 为指定接收方创建RTCPeerConnection（P2P连接）
+    function createPeerConnection(clientId) {
+      // 创建P2P连接实例
+      const pc = new RTCPeerConnection(iceConfig);
+      // 存储该连接，关联接收方ID
+      peerConnections.set(clientId, pc);
+
+      // 监听ICE候选生成，发送给接收方
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          ws.send(JSON.stringify({
+            type: 'ice-candidate',
+            targetId: clientId, // 目标接收方ID
+            data: e.candidate
+          }));
+        }
+      };
+
+      // 监听P2P连接状态变化
+      pc.onconnectionstatechange = () => {
+        console.log(`与接收方${clientId}的连接状态：`, pc.connectionState);
+        if (pc.connectionState === 'connected') {
+          statusText.textContent = `状态：与接收方（ID：${clientId}）P2P连接成功`;
+        } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+          // 移除失效的连接
+          peerConnections.delete(clientId);
+          clientCount.textContent = peerConnections.size;
+          statusText.textContent = `状态：与接收方（ID：${clientId}）连接断开`;
+        }
+      };
+
+      const dataChannel = pc.createDataChannel(`myDataChannel_${clientId}`);
+      dataChannel.onopen = () => {
+        console.log('Data channel is open');
+        dataChannel.send(`Hello, client:${clientId}! I am host:${hostId}`);
+      };
+      dataChannel.onmessage = (event) => {
+        console.log('Received message:', event.data);
+        const li = document.createElement('li');
+        li.textContent = `接收方${clientId}：${event.data}`;
+        messageList.appendChild(li);
+      };
+      dataChannels.push(dataChannel);
+
+      // 关键：将本地摄像头流添加到P2P连接，复用同一流推送
+      // localStream.getTracks().forEach(track => {
+      //   pc.addTrack(track, localStream);
+      // });
+
+      return pc;
+    }
+
+    // 5. 创建Offer并发送给指定接收方
+    async function createAndSendOffer(clientId) {
+      const pc = peerConnections.get(clientId);
+      if (!pc) {
+        console.error(`未找到接收方${clientId}的P2P连接`);
+        return;
+      }
+
+      try {
+        // 创建Offer（会话描述）
+        const offer = await pc.createOffer();
+        // 设置本地SDP（描述自身音视频能力、网络信息）
+        await pc.setLocalDescription(offer);
+        // 发送Offer给接收方（通过信令服务器转发）
+        ws.send(JSON.stringify({
+          type: 'offer',
+          targetId: clientId,
+          data: offer
+        }));
+        statusText.textContent = `状态：已向接收方（ID：${clientId}）发送Offer`;
+      } catch (err) {
+        console.error(`创建/发送Offer失败（接收方${clientId}）：`, err);
+        statusText.textContent = `状态：向接收方（ID：${clientId}）发送Offer失败`;
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const message = messageInput.value.trim();
+      dataChannels.forEach(channel => {
+        if (channel.readyState === 'open') {
+          channel.send(message);
+        }
+      });
+      messageInput.value = '';
+    });
+
+    // 绑定按钮点击事件
+    startBtn.addEventListener('click', () => {
+      startBtn.disabled = true;
+      statusText.textContent = '状态：正在连接信令服务器...';
+      // 先初始化WebSocket，再开启摄像头
+      initWebSocket();
+      setTimeout(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          // 向信令服务器注册为发送方
+          ws.send(JSON.stringify({ type: 'register-host' }));
+          // startCamera();
+        } else {
+          alert('信令服务器连接失败，请检查服务器是否启动');
+          startBtn.disabled = false;
+          statusText.textContent = '状态：信令服务器连接失败';
+        }
+      }, 500);
+    });
+  </script>
+</body>
+
+</html>
