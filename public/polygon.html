@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    #canvas {
+      border: 1px solid #000;
+      margin: 100px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas" width="500" height="500"></canvas>
+  <button id="addBtn">添加</button>
+  <button id="editBtn">编辑</button>
+  <button id="delBtn">删除</button>
+  <script>
+    const canvas = document.getElementById('canvas')
+    const ctx = canvas.getContext('2d')
+    const editBtn = document.getElementById('editBtn')
+    const addBtn = document.getElementById('addBtn')
+    const delBtn = document.getElementById('delBtn')
+
+    let id = 0
+    let isDrawing = false
+    let isNear = false
+    let isEdit = false
+    let isMovePolygon = false
+    let isMovePoint = false;
+    let editingPolygon
+    let editingPoint
+    let startPoint
+    let mousePos = { x: 0, y: 0 };
+    let polygons = []
+    let points = []
+
+    addBtn.addEventListener('click', function () {
+      isEdit = false
+      editingPolygon = undefined
+      resetPolygonEditState()
+      render()
+    })
+    editBtn.addEventListener('click', function () {
+      isEdit = true
+    })
+    delBtn.addEventListener('click', function () {
+      if (!editingPolygon) return
+      polygons = polygons.filter(p => p.id !== editingPolygon.id)
+      editingPolygon = undefined
+      render()
+    })
+    canvas.addEventListener('click', function (e) {
+      if (!isEdit) return
+      const point = getPoint(e)
+      for (let i = 0; i < polygons.length; i++) {
+        const polygon = polygons[i]
+        const isInside = isPointInPolygon(point, polygon.points)
+        if (isInside) {
+          resetPolygonEditState()
+          polygon.isEdit = true
+          editingPolygon = polygon
+          render()
+          break
+        }
+      }
+    })
+    canvas.addEventListener('mousedown', function (e) {
+      if (!isEdit || !editingPolygon) return
+      startPoint = getPoint(e)
+      const points = editingPolygon.points
+      for (let i = 0; i < points.length; i++) {
+        const distance = getTwoPointDistance(startPoint.x, startPoint.y, points[i].x, points[i].y)
+        if (distance <= 5) {
+          isMovePoint = true
+          editingPoint = points[i]
+          return
+        }
+      }
+      const isInside = isPointInPolygon(startPoint, points)
+      if (isInside) {
+        isMovePolygon = true
+      }
+    })
+    canvas.addEventListener('mousemove', function (e) {
+      if (!isMovePolygon) return
+      const endPoint = getPoint(e)
+      const offsetX = endPoint.x - startPoint.x
+      const offsetY = endPoint.y - startPoint.y
+      startPoint = endPoint
+      const points = editingPolygon.points
+      for (let i = 0; i < points.length; i++) {
+        const point = points[i]
+        point.x += offsetX
+        point.y += offsetY
+      }
+      render()
+    })
+    canvas.addEventListener('mousemove', function (e) {
+      if (!isMovePoint) return
+      const endPoint = getPoint(e)
+      const offsetX = endPoint.x - startPoint.x
+      const offsetY = endPoint.y - startPoint.y
+      startPoint = endPoint
+      editingPoint.x += offsetX
+      editingPoint.y += offsetY
+      render()
+    })
+    canvas.addEventListener('mouseup', function (e) {
+      isMovePolygon = false
+      isMovePoint = false
+    })
+    canvas.addEventListener('click', function (e) {
+      if (isEdit) return
+      if (isNear) {
+        isNear = false
+        isDrawing = false
+        polygons.push({
+          id: id++,
+          isEdit: false,
+          points: [...points]
+        })
+        points.length = 0
+        render()
+        return
+      }
+      isDrawing = true
+      const { x, y } = getPoint(e)
+      points.push({ x, y })
+      drawArc(x, y)
+    })
+    canvas.addEventListener('mousemove', function (e) {
+      if (isEdit || !isDrawing) return
+      const { x, y } = getPoint(e)
+      mousePos.x = x
+      mousePos.y = y
+      render()
+    })
+
+    setInterval(function () {
+      editBtn.disabled = isDrawing
+      delBtn.disabled = !editingPolygon
+    }, 1000)
+
+    function render() {
+      if (polygons.length === 0 && points.length === 0) return
+      initCanvas()
+      for (let i = 0; i < polygons.length; i++) {
+        const { isEdit, points } = polygons[i]
+        for (let j = 0; j < points.length; j++) {
+          const p1 = points[j]
+          const p2 = points[(j + 1) % points.length]
+          if (isEdit) {
+            drawArc(p1.x, p1.y, 'blue')
+            drawDashedLine(p1, p2)
+          } else {
+            drawLine(p1, p2)
+          }
+        }
+      }
+      if (isEdit || !isDrawing) return
+      for (let i = 0; i < points.length; i++) {
+        const point = points[i]
+        drawArc(point.x, point.y)
+      }
+      for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i]
+        const p2 = points[i + 1]
+        drawLine(p1, p2)
+      }
+      drawLine(points[points.length - 1], mousePos)
+      if (points.length >= 3) {
+        const point = points[0]
+        const distance = getTwoPointDistance(point.x, point.y, mousePos.x, mousePos.y)
+        isNear = distance <= 20
+        if (isNear) {
+          drawDashedCircle(point.x, point.y)
+        }
+      }
+    }
+    function resetPolygonEditState() {
+      polygons.forEach(polygon => {
+        polygon.isEdit = false
+      })
+    }
+    function getPoint(e) {
+      const rect = canvas.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      return { x, y }
+    }
+    function drawDashedCircle(x, y) {
+      ctx.beginPath();
+      ctx.arc(x, y, 20, 0, Math.PI * 2, false);
+      ctx.setLineDash([5, 3]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'blue'
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    function drawArc(x, y, color = 'red') {
+      ctx.beginPath()
+      ctx.arc(x, y, 5, 0, Math.PI * 2)
+      ctx.fillStyle = color
+      ctx.fill()
+    }
+    function drawLine(p1, p2) {
+      ctx.beginPath()
+      ctx.moveTo(p1.x, p1.y)
+      ctx.lineTo(p2.x, p2.y)
+      ctx.lineWidth = 3
+      ctx.strokeStyle = 'red'
+      ctx.stroke()
+    }
+    function drawDashedLine(p1, p2) {
+      ctx.beginPath()
+      ctx.moveTo(p1.x, p1.y)
+      ctx.lineTo(p2.x, p2.y)
+      ctx.setLineDash([5, 3]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'blue'
+      ctx.stroke()
+      ctx.setLineDash([]);
+    }
+    function initCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    // 计算两点间的欧氏距离
+    function getTwoPointDistance(x1, y1, x2, y2) {
+      const dx = x2 - x1; // x轴差值
+      const dy = y2 - y1; // y轴差值
+      // 距离公式：√[(x2-x1)² + (y2-y1)²]
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+    /**
+     * 核心】判断点是否在多边形内部（射线法）
+     * @param {Object} point - 待判断点 {x, y}
+     * @param {Array} polygon - 多边形顶点数组 [{x, y}, ...]
+     * @returns {Boolean} true=内部，false=外部
+     */
+    function isPointInPolygon(point, polygon) {
+      // let isInside = false;
+      let count = 0;
+      const n = polygon.length;
+      // 遍历多边形的每一条边（i和i+1为边的两个端点，最后一个点连回第一个点）
+      // for (let i = 0, j = n - 1; i < n; j = i++) {
+      for (let i = 0; i < n; i++) {
+        const p1 = polygon[i]; // 边的起点
+        // const p2 = polygon[j]; // 边的终点
+        const p2 = polygon[(i + 1) % n]; // 边的终点
+
+        // 条件1：点的y坐标在p1和p2的y坐标之间（不包含等于，避免重复计数）
+        // const yInRange = (p1.y > point.y) !== (p2.y > point.y);
+        const minY = Math.min(p1.y, p2.y);
+        const maxY = Math.max(p1.y, p2.y);
+        const yInRange = point.y > minY && point.y < maxY;
+        if (!yInRange) continue;
+
+        // 计算射线（水平向右）与当前边的交点x坐标
+        // const xIntersect = ((point.y - p1.y) * (p2.x - p1.x)) / (p2.y - p1.y) + p1.x;
+        // 上面的计算公式可以通过下面的计算公式简化得到
+        const k = (p2.y - p1.y) / (p2.x - p1.x);
+        const b = p1.y - k * p1.x;
+        const xIntersect = (point.y - b) / k;
+
+        // 条件2：交点在点的右侧 → 射线与边交叉，翻转标记
+        if (point.x < xIntersect) {
+          // isInside = !isInside;
+          count++;
+        }
+      }
+      // return isInside;
+      return count % 2 === 1;
+    }
+  </script>
+</body>
+
+</html>
