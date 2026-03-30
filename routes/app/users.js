@@ -193,13 +193,20 @@ router.get('/replyComments', async function (req, res) {
         const pageSize = Math.abs(Number(query.pageSize)) || 10;
         const offset = (currentPage - 1) * pageSize;
 
-        const [results] = await sequelize.query(`
-            SELECT c1.text as my_text, c2.*, u.avatar, u.username 
-            FROM (SELECT * FROM Comments WHERE userId = ${req.userId}) c1 
+        // 使用参数化查询防止 SQL 注入
+        const [results] = await sequelize.query(
+            `SELECT c1.text as my_text, c2.*, u.avatar, u.username 
+            FROM (SELECT * FROM Comments WHERE userId = :userId) c1 
             INNER JOIN (SELECT * FROM Comments WHERE replyId IS NOT NULL) c2 ON c1.id = c2.replyId
             LEFT JOIN Users u ON u.id = c2.userId
-            ORDER BY c2.createdAt DESC
-        `);
+            ORDER BY c2.createdAt DESC`,
+            {
+                replacements: {
+                    userId: req.userId,
+                },
+                type: sequelize.QueryTypes.SELECT,
+            }
+        );
 
         const ids = results.map((item) => item.id);
         const replyComments = await Comment.findAll({
